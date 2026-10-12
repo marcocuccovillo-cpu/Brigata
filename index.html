@@ -68,13 +68,16 @@ const IC={ing:sv('<path d="M3 9h18l-2 11H5z"/><path d="M8 9l3-5M16 9l-3-5"/>'),r
 const LOGO=`<svg viewBox="0 0 32 32" width=36 height=36><path d="M11 4 6 7l-4 7 5 3 2-3v14h14V14l2 3 5-3-4-7-5-3-5 7z" fill="#14120e"/><path d="M11 4l5 7 5-7M16 11v17" fill=none stroke="#c9a24a" stroke-width=1.2 stroke-linejoin=round /><g fill="#c9a24a"><circle cx=13.2 cy=17 r=1.1 /><circle cx=13.2 cy=21 r=1.1 /><circle cx=13.2 cy=25 r=1.1 /><circle cx=18.8 cy=17 r=1.1 /><circle cx=18.8 cy=21 r=1.1 /><circle cx=18.8 cy=25 r=1.1 /></g></svg>`;
 const hdr=()=>{$('header').innerHTML=LOGO+`<div class=bn>Brigata${S.loc?`<small>${esc(S.loc)}</small>`:''}</div>`+(S.logo?`<img src="${S.logo}" alt="" style="margin-left:auto;height:36px;width:36px;border-radius:50%;object-fit:cover;border:1px solid var(--g)">`:'')};
 function setLogo(f){const im=new Image();im.onload=()=>{const k=Math.min(1,256/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);S.logo=c.toDataURL(f.type=='image/png'?'image/png':'image/jpeg',.88);save();draw()};im.onerror=()=>alert('Immagine non valida.');im.src=URL.createObjectURL(f)}
+let ip=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;if(tab=='pro')draw()});addEventListener('appinstalled',()=>{ip=null;draw()});
+const isApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const instCard=()=>isApp()?'':`<div class=card><b>Installa Brigata</b>${ip?'<div class=m style="margin:4px 0 8px">Aggiungila alla schermata home: si apre a schermo intero e funziona anche offline.</div><button data-a=inst>Installa app</button>':'<div class=m style="margin-top:4px">Android (Chrome): menu ⋮ → Installa app. iPhone (Safari): Condividi → Aggiungi alla schermata Home.</div>'}</div>`;
 function vF(){const D=today(),h=new Date().getHours(),td=S.pren.filter(x=>x.d==D),tn=t=>td.filter(x=>x.t==t).reduce((a,x)=>a+(x.p||0),0),
 lg=S.log.filter(x=>x.d==D),zr=S.u.filter(u=>lg.some(x=>x.u==u.id)).length,bad=lg.filter(x=>!x.ok).length,tk=S.t.filter(t=>S.done[D+t.id]).length,
 ex=S.lots.filter(x=>days(x.e)<0).length,sc=S.lots.filter(x=>{const k=days(x.e);return k>=0&&k<=2}).length,lo=S.rec.filter(r=>r.pv&&cost(r)/r.s/r.pv*100>r.fc).length,
 m30=S.pren.filter(x=>x.s!=null&&days(x.d)>=-30&&days(x.d)<=0),tot=m30.reduce((a,x)=>a+x.s,0),g=tn('Giornaliera'),mx=Math.max(tn('Pranzo'),tn('Cena'),g),
 row=(l,v,to,c)=>`<div class=row data-a=tab data-id=${to} style="padding:10px 0;border-top:1px solid var(--b)"><span>${l}</span><b class="${c||''}">${v}</b></div>`;
 return `<div class=card style="text-align:center">${S.logo?`<img src="${S.logo}" alt="" style="height:88px;max-width:100%;object-fit:contain">`:''}<div style="font:700 22px Georgia,serif;margin-top:6px">${esc(S.loc||'Il tuo locale')}</div><div class=m>${h<12?'Buongiorno':h<18?'Buon pomeriggio':'Buonasera'} · ${new Date().toLocaleDateString('it',{weekday:'long',day:'numeric',month:'long'})}</div></div>
-<div class=card><b>Situazione di oggi</b><div class=m style="margin-bottom:6px">Tocca una riga per aprire la sezione.</div>
+${instCard()}<div class=card><b>Situazione di oggi</b><div class=m style="margin-bottom:6px">Tocca una riga per aprire la sezione.</div>
 ${row('Prenotazioni',`Pranzo ${tn('Pranzo')} · Cena ${tn('Cena')}${g?` · Giorn. ${g}`:''}${S.cap?` · posti ${S.cap}`:''}`,'pre',S.cap&&mx>S.cap?'bad':'')}
 ${row('Temperature registrate',S.u.length?`${zr}/${S.u.length}${bad?` · ${bad} fuori range`:''}`:'–','hac',bad?'bad':'')}
 ${row('Pulizie fatte',S.t.length?`${tk}/${S.t.length}`:'–','hac')}
@@ -105,7 +108,7 @@ function draw(){hdr();$('main').innerHTML=`<h1 class=pt>${T[tab][2]||T[tab][0]}<
 const txt=()=>(S.loc?S.loc+'\n':'')+'Allergeni:\n'+S.rec.map(r=>r.n+': '+(als(r).map(k=>AL[k]).join(', ')||'nessuno')).join('\n');
 const del=(k,id)=>{if(confirm('Eliminare?')){S[k]=S[k].filter(x=>x.id!=id);save();draw()}};
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const id=el.dataset.id;
-({tab:()=>{tab=id;draw()},ni:()=>eIng(),ei:()=>eIng(id),di:()=>del('ing',id),nr:()=>eRec(),er:()=>eRec(id),dr:()=>del('rec',id),temp:()=>eTemp(id),nu:nUnit,du:()=>del('u',id),nt:nTask,nl:nLot,ul:()=>$('#lg').click(),rl:()=>{S.logo=null;save();draw()},np:()=>ePren(),ep:()=>ePren(id),cl:()=>eClose(id),dp:()=>del('pren',id),dl:()=>del('lots',id),dt:()=>del('t',id),
+({tab:()=>{tab=id;draw()},ni:()=>eIng(),ei:()=>eIng(id),di:()=>del('ing',id),nr:()=>eRec(),er:()=>eRec(id),dr:()=>del('rec',id),temp:()=>eTemp(id),nu:nUnit,du:()=>del('u',id),nt:nTask,nl:nLot,inst:()=>{ip.prompt();ip.userChoice.then(()=>{ip=null;draw()})},ul:()=>$('#lg').click(),rl:()=>{S.logo=null;save();draw()},np:()=>ePren(),ep:()=>ePren(id),cl:()=>eClose(id),dp:()=>del('pren',id),dl:()=>del('lots',id),dt:()=>del('t',id),
 done:()=>{S.done[today()+id]=el.checked?hm():0;save()},print:()=>window.print(),
 share:()=>navigator.share?navigator.share({text:txt()}).catch(()=>{}):navigator.clipboard.writeText(txt()).then(()=>alert('Testo copiato')),
 pre:()=>{if((S.u.length||S.t.length)&&!confirm('Sostituire zone e pulizie attuali?'))return;S.u=PRE[id].u.map(([n,a,b])=>({id:uid(),n,a,b}));S.t=PRE[id].t.map(n=>({id:uid(),n}));save();tab='hac';draw()},
