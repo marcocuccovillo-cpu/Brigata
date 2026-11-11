@@ -9,7 +9,7 @@
 
 const CFG = window.BRIGATA_CONFIG || {};
 const KV = ['loc','logo','cap','memo','memoD','prof','cw','tpl','pub'];
-const COOKW = ['log','done','lots','pren','pr','sp','nt','tv','sc'];   // uguale a cook_can_write() nel database
+const COOKW = ['log','done','lots','pren','pr','sp','nt','tv','sc','bc'];   // uguale a cook_can_write() nel database
 
 // JSON con chiavi ordinate: la stessa riga dà sempre la stessa stringa
 function canon(v) {

@@ -51,7 +51,7 @@ function shareCanvas(c, name) {
 }
 
 // ---------- Stato ----------
-const ARR = ['ing','rec','u','t','log','lots','pren','fr','pr','sp','nt','tv','st','cl','sc'];
+const ARR = ['ing','rec','u','t','log','lots','pren','fr','pr','sp','nt','tv','st','cl','sc','bc'];
 let S = null;
 let STORE = 'cp';          // chiave localStorage dei dati in uso ('cp' = solo su questo dispositivo)
 

@@ -125,6 +125,12 @@ nav button.on .ic{background:#f1e3b9}
 .qr canvas{width:132px;height:132px;flex:none;border:1px solid var(--b);border-radius:8px;background:#fff;image-rendering:pixelated}
 .lnk{font-size:12px;word-break:break-all;color:var(--a)}
 
+.scv{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3;max-height:42vh;width:100%}
+.scv video{width:100%;height:100%;object-fit:cover;display:block}
+.scl{position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--g);box-shadow:0 0 10px var(--g);animation:scl 1.6s ease-in-out infinite alternate}
+@keyframes scl{from{transform:translateY(-40px)}to{transform:translateY(40px)}}
+.scv #sct{position:absolute;right:8px;bottom:8px}
+#sc{width:min(96vw,560px)}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--p);color:var(--gold);padding:10px 16px;border-radius:10px;z-index:9;font-size:14px;max-width:86vw;text-align:center}
 
 @media print{

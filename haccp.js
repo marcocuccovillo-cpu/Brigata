@@ -22,11 +22,14 @@ const nUnit = () => ed('Nuova zona', `<input name=n placeholder="Nome (es. Frigo
   S.u.push({id:uid(), n:v(d, 'n').trim(), a:Math.min(a, b), b:Math.max(a, b)});
 });
 
-const nLot = () => ed('Nuovo lotto', `<input name=n placeholder="Prodotto"><input name=l placeholder="Lotto / fornitore"><div class=m>Scadenza</div><input name=e type=date>`, d => {
-  if (!v(d, 'n').trim() || !v(d, 'e')) return false;
-  S.lots.push({id:uid(), n:v(d, 'n').trim(), l:v(d, 'l').trim(), e:v(d, 'e'), by:me()});
-  act('lotto', `${v(d, 'n').trim()} · scade ${dm(v(d, 'e'))}`);
-});
+const nLot = () => {
+  ed('Nuovo lotto', `<input name=n placeholder="Prodotto"><input name=l placeholder="Lotto / fornitore"><div class=m>Scadenza</div><input name=e type=date>`, d => {
+    if (!v(d, 'n').trim() || !v(d, 'e')) return false;
+    S.lots.push({id:uid(), n:v(d, 'n').trim(), l:v(d, 'l').trim(), e:v(d, 'e'), by:me()});
+    act('lotto', `${v(d, 'n').trim()}${v(d, 'l').trim() ? ' · lotto ' + v(d, 'l').trim() : ''} · scade ${dm(v(d, 'e'))}`);
+  }, `<button type=button class=g id=lsc>Scansiona</button>`);
+  $('#lsc').onclick = () => scLot();
+};
 
 const nTask = () => ed('Nuovo compito di pulizia', `<input name=n placeholder="Compito">`, d => {
   if (!v(d, 'n').trim()) return false;

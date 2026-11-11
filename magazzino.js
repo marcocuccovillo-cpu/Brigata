@@ -106,7 +106,8 @@ function mgAr() {
   if (!S.fr.length) return alert('Per caricare la merce serve almeno un frigorifero, una cella o un congelatore nel Magazzino. Aggiungine uno e riprova.');
   const loc = x => { const m = S.pr.find(y => y.n.toLowerCase() == x.n.toLowerCase()); return m && S.fr.find(f => f.id == m.f) ? {f:m.f, s:+m.s || 1} : {f:S.fr[0].id, s:1}; };
   const step1 = () => {
-    D.innerHTML = `<h3 style="margin:0 0 6px">Ordine arrivato</h3><div class=m style="margin-bottom:12px">${L.length} prodotti nell'ordine. La merce è arrivata completa o manca qualcosa?</div><div style="display:grid;gap:8px"><button type=button data-m=full>Arrivato completo</button><button type=button class=g data-m=part>Con merce mancante</button><button type=button class=g id=dc>Annulla</button></div>`;
+    D.innerHTML = `<h3 style="margin:0 0 6px">Ordine arrivato</h3><div class=m style="margin-bottom:12px">${L.length} prodotti nell'ordine. La merce è arrivata completa o manca qualcosa?</div><div style="display:grid;gap:8px"><button type=button id=dsc>Con lo scanner</button><button type=button class=g data-m=full>Arrivato completo</button><button type=button class=g data-m=part>Con merce mancante</button><button type=button class=g id=dc>Annulla</button></div><div class=m style="margin-top:8px">Con lo scanner inquadri un collo alla volta: lotto e scadenza si leggono dall'etichetta quando il fornitore usa i codici GS1, e l'ordine si aggiorna da solo.</div>`;
+    $('#dsc').onclick = () => { D.close(); scMerce(); };
     D.querySelectorAll('[data-m]').forEach(b => b.onclick = () => step2(b.dataset.m));
     $('#dc').onclick = () => D.close();
   };
@@ -162,11 +163,12 @@ function mgSp() {
 
 function vMag() {
   if (mgs == 'spesa') return mgSp();
+  if (mgs == 'codici') return mgCod();
   const f = S.fr.find(x => x.id == mgs);
   if (f) return mgUn(f);
   mgs = null;
   const nS = S.sp.filter(x => !x.ok).length;
-  return `<div class="row st" style="margin-bottom:10px">${can('edit') ? '<button data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button></div>`
+  return `<button data-a=xscn class=w style="margin-bottom:8px">Scansiona merce</button><div class="row st" style="margin-bottom:10px">${can('edit') ? '<button class=g data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button><button class=g data-a=xcod>Codici${S.bc.length ? ` (${S.bc.length})` : ''}</button></div>`
     + (S.fr.length ? `<div class=ug>${S.fr.map(f => {
       const L = S.pr.filter(x => x.f == f.id), al = L.filter(x => x.e && days(x.e) <= 2).length;
       return `<div class="card uc" data-a=xmu data-id=${f.id}><div style="width:${f.k == 'cong' ? '100%' : '58%'};margin:0 auto 6px">${mgDraw(f)}</div><b>${esc(f.n)}</b><div class=m>${MGK[f.k]} · ${L.length} prodotti</div>${al ? `<div class=warn>${al} in scadenza</div>` : ''}</div>`;
