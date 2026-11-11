@@ -1,7 +1,7 @@
 {
  "name": "Brigata",
  "short_name": "Brigata",
- "description": "Allergeni, food cost e HACCP per cucine professionali",
+ "description": "Allergeni, food cost, HACCP, magazzino, scarti e turni per la brigata di cucina",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

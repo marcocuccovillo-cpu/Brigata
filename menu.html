@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#14120e"><title>Menù e allergeni</title>
+<style>
+:root{--bg:#faf6ec;--c:#fffdf7;--t:#14120e;--m:#6f6753;--a:#8a6a1c;--g:#c9a24a;--b:#e6dcc3;--s:#f3e8c8;--r:#b3261e}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--t)}
+header{background:#14120e;color:#e8c872;text-align:center;padding:22px 16px 18px;border-bottom:3px solid var(--g)}
+header img{height:72px;width:72px;object-fit:cover;border-radius:50%;border:2px solid var(--g);background:#fff;display:block;margin:0 auto 10px}
+h1{font:700 26px Georgia,serif;margin:0}header p{margin:6px 0 0;font:italic 14px Georgia,serif;color:#d9c48a}
+main{max-width:640px;margin:auto;padding:12px}
+.lang{display:flex;justify-content:center;gap:6px;margin-top:12px}.lang button{font:600 13px system-ui;border:1px solid var(--g);background:transparent;color:#e8c872;border-radius:20px;padding:4px 12px}.lang button.on{background:var(--g);color:#14120e}
+.box{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.f{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.f button{font:13px system-ui;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:20px;padding:5px 10px}.f button.on{background:#14120e;color:#e8c872;border-color:#14120e}
+h2{font:700 19px Georgia,serif;margin:20px 4px 8px;color:var(--a)}
+.d{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:11px 13px;margin-bottom:8px}
+.d.no{opacity:.45}.d.no b::after{content:' ✕';color:var(--r)}
+.d b{font:700 17px Georgia,serif}
+.tag{display:inline-block;background:var(--s);color:#5c4710;border-radius:20px;padding:2px 9px;font-size:12px;margin:5px 4px 0 0}.tag.hit{background:#f6dcd9;color:var(--r);font-weight:700}
+.none{font-size:13px;color:var(--m);margin-top:4px}
+.m{color:var(--m);font-size:13px}.note{font-size:12px;color:var(--m);text-align:center;margin:20px 8px 30px;line-height:1.5}
+</style></head>
+<body><header id=h><h1>…</h1></header><main id=b><div class=box>…</div></main>
+<script src="config.js"></script>
+<script>
+'use strict';
+const L = {
+  it:{al:['Glutine','Crostacei','Uova','Pesce','Arachidi','Soia','Latte','Frutta a guscio','Sedano','Senape','Sesamo','Solfiti','Lupini','Molluschi'],sub:'Menù e allergeni',f:'Devi evitare qualcosa? Tocca gli allergeni: i piatti che li contengono vengono segnati.',none:'Nessun allergene dichiarato',other:'Altri piatti',note:'Elenco degli allergeni (Reg. UE 1169/2011) calcolato dalle ricette. In cucina si usano anche altri ingredienti: in caso di allergia o intolleranza chiedi sempre al personale.',upd:'Aggiornato il',err:'Menù non disponibile.',cat:{Antipasti:'Antipasti',Primi:'Primi',Secondi:'Secondi',Contorni:'Contorni',Pizze:'Pizze',Dolci:'Dolci',Bevande:'Bevande',Altro:'Altro'}},
+  en:{al:['Gluten','Crustaceans','Eggs','Fish','Peanuts','Soy','Milk','Tree nuts','Celery','Mustard','Sesame','Sulphites','Lupin','Molluscs'],sub:'Menu & allergens',f:'Need to avoid something? Tap the allergens: dishes containing them will be marked.',none:'No allergens declared',other:'Other dishes',note:'Allergen list (EU Reg. 1169/2011) based on our recipes. Other ingredients are handled in the kitchen: if you have an allergy or intolerance, please always ask our staff.',upd:'Updated',err:'Menu not available.',cat:{Antipasti:'Starters',Primi:'First courses',Secondi:'Main courses',Contorni:'Side dishes',Pizze:'Pizzas',Dolci:'Desserts',Bevande:'Drinks',Altro:'Other'}},
+  de:{al:['Gluten','Krebstiere','Eier','Fisch','Erdnüsse','Soja','Milch','Schalenfrüchte','Sellerie','Senf','Sesam','Sulfite','Lupinen','Weichtiere'],sub:'Speisekarte & Allergene',f:'Müssen Sie etwas meiden? Tippen Sie auf die Allergene: Gerichte, die sie enthalten, werden markiert.',none:'Keine Allergene angegeben',other:'Weitere Gerichte',note:'Allergenliste (EU-Verordnung 1169/2011) auf Basis unserer Rezepte. In der Küche werden auch andere Zutaten verarbeitet: Bei Allergien oder Unverträglichkeiten fragen Sie bitte immer unser Personal.',upd:'Aktualisiert am',err:'Speisekarte nicht verfügbar.',cat:{Antipasti:'Vorspeisen',Primi:'Erste Gänge',Secondi:'Hauptgänge',Contorni:'Beilagen',Pizze:'Pizzen',Dolci:'Desserts',Bevande:'Getränke',Altro:'Sonstiges'}}
+};
+const ORD = ['Antipasti','Primi','Secondi','Contorni','Pizze','Dolci','Bevande','Altro',''];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let lg = (navigator.language || 'it').slice(0, 2); if (!L[lg]) lg = lg == 'it' ? 'it' : 'en';
+let D = null; const sel = new Set();
+
+function draw() {
+  const T = L[lg], d = D;
+  document.documentElement.lang = lg;
+  document.title = (d.n ? d.n + ' — ' : '') + T.sub;
+  document.getElementById('h').innerHTML = (d.logo && /^data:image\//.test(d.logo) ? `<img src="${d.logo}" alt="">` : '') + `<h1>${esc(d.n || T.sub)}</h1><p>${T.sub}</p><div class=lang>${['it','en','de'].map(k => `<button data-l=${k} class="${k == lg ? 'on' : ''}">${k.toUpperCase()}</button>`).join('')}</div>`;
+  const used = [...new Set(d.d.flatMap(x => x.al))].sort((a, b) => a - b);
+  let h = used.length ? `<div class=box><div class=m>${T.f}</div><div class=f>${used.map(k => `<button data-a=${k} class="${sel.has(k) ? 'on' : ''}">${T.al[k]}</button>`).join('')}</div></div>` : '';
+  ORD.forEach(c => {
+    const L2 = d.d.filter(x => (x.c || '') == c || (c == '' && !ORD.includes(x.c)));
+    if (!L2.length) return;
+    h += `<h2>${c ? T.cat[c] || esc(c) : T.other}</h2>` + L2.map(x => {
+      const hit = x.al.some(k => sel.has(k));
+      return `<div class="d${hit ? ' no' : ''}"><b>${esc(x.n)}</b><div>${x.al.length ? x.al.map(k => `<span class="tag${sel.has(k) ? ' hit' : ''}">${T.al[k]}</span>`).join('') : `<div class=none>${T.none}</div>`}</div></div>`;
+    }).join('');
+  });
+  h += `<div class=note>${T.note}${d.upd ? `<br>${T.upd} ${new Date(d.upd + 'T12:00').toLocaleDateString(lg)}` : ''}</div>`;
+  document.getElementById('b').innerHTML = h;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !D) return;
+  if (b.dataset.l) { lg = b.dataset.l; draw(); }
+  if (b.dataset.a) { const k = +b.dataset.a; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); }
+});
+
+(async () => {
+  const C = window.BRIGATA_CONFIG || {}, slug = new URLSearchParams(location.search).get('m') || '';
+  const fail = () => { document.getElementById('h').innerHTML = `<h1>${L[lg].sub}</h1>`; document.getElementById('b').innerHTML = `<div class=box>${L[lg].err}</div>`; };
+  if (!C.supabaseUrl || !/^[a-z0-9]{6,40}$/i.test(slug)) return fail();
+  try {
+    const r = await fetch(C.supabaseUrl.replace(/\/$/, '') + '/rest/v1/public_menus?select=data&published=eq.true&slug=eq.' + slug, {headers: {apikey: C.supabaseKey}});
+    const j = await r.json();
+    if (!r.ok || !j.length) return fail();
+    D = j[0].data; D.d = Array.isArray(D.d) ? D.d : [];
+    draw();
+  } catch (e) { fail(); }
+})();
+</script></body></html>
