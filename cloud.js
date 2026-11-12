@@ -9,8 +9,8 @@
 
 const CFG = window.BRIGATA_CONFIG || {};
 const KV = ['loc','logo','cap','memo','memoD','prof','cw','tpl','pub'];
-const PRIV = ['cost','att'];   // dati che i cuochi non ricevono (uguale alla regola it_sel nel database)
-const COOKW = ['log','done','lots','pren','pr','sp','nt','tv','sc','bc','pp'];   // uguale a cook_can_write() nel database
+const PRIV = ['cost','att','inv'];   // dati che i cuochi non ricevono (uguale alla regola it_sel nel database)
+const COOKW = ['log','done','lots','pren','pr','sp','nt','tv','sc','bc','pp','ps','rc','ab','mt'];   // uguale a cook_can_write() nel database
 
 // JSON con chiavi ordinate: la stessa riga dà sempre la stessa stringa
 function canon(v) {

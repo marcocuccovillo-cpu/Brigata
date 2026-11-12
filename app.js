@@ -41,6 +41,8 @@ function go(id) {
   if (['rec','ing','men','sca'].includes(id)) { sub = id; tab = 'cuc'; } else tab = id;
   if (id == 'mag') mgs = null;
   if (id == 'att') { tab = 'tur'; trV = 'att'; }
+  if (id == 'man') { tab = 'hac'; hS = 'man'; }
+  if (id == 'hac') hS = 'oggi';
   draw(); scrollTo(0, 0);
 }
 

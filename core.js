@@ -51,7 +51,7 @@ function shareCanvas(c, name) {
 }
 
 // ---------- Stato ----------
-const ARR = ['ing','rec','u','t','log','lots','pren','fr','pr','sp','nt','tv','st','cl','sc','bc','att','pp'];
+const ARR = ['ing','rec','u','t','log','lots','pren','fr','pr','sp','nt','tv','st','cl','sc','bc','att','pp','ps','fo','rc','ab','mt','inv'];
 let S = null;
 let STORE = 'cp';          // chiave localStorage dei dati in uso ('cp' = solo su questo dispositivo)
 
@@ -97,6 +97,7 @@ function load(key) {
 
 let saveHook = null;   // impostato dal modulo cloud
 function save() {
+  if (typeof autoOrder == 'function') try { autoOrder(); } catch (e) {}
   try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { tst('Memoria del telefono piena: esporta un backup.'); }
   if (saveHook) saveHook();
 }

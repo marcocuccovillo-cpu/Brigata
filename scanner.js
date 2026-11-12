@@ -164,18 +164,49 @@ function scMerce() {
       <div class=row><input name=q type=number step=any min=0 inputmode=decimal value="${q0}"><select name=u style="width:120px">${MGU.map(u => `<option ${u == u0 ? 'selected' : ''}>${u}</option>`).join('')}</select></div>
       <div class=row style="gap:6px"><select name=f style="flex:1;min-width:0;width:auto">${S.fr.map(f => `<option value=${f.id} ${f.id == fr0.id ? 'selected' : ''}>${esc(f.n)}</option>`).join('')}</select><select name=s style="flex:0 0 122px;width:122px">${shelves(fr0).map((l, i) => `<option value=${i + 1} ${cat && cat.f == fr0.id && cat.s == i + 1 ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <input name=l placeholder="Lotto" value="${esc(g ? g.lot : '')}"><div class=m>Scadenza</div><input name=e type=date value="${g ? g.exp : ''}">
+      <div class=m style="margin-top:8px">Controllo all'arrivo</div>
+      <div class=row style="gap:8px"><input name=tt type=number step=0.1 inputmode=decimal placeholder="Temperatura °C (freschi e surgelati)" style="flex:1;min-width:0"><label class=chk style="flex:none;margin:0"><input type=checkbox name=int checked>Imballo integro</label></div>
+      <div id=rch class=hint></div>
+      <div id=rjw style="display:none"><select name=rj>${RJ.map(r => `<option>${r}</option>`).join('')}</select></div>
       ${cat ? '' : '<label class=chk><input type=checkbox name=rem checked>Ricorda questo codice</label>'}
-      <div class=row style="margin-top:8px"><button type=button class=g id=scsk>Salta</button><button type=button id=scld>Carica</button></div></div>`;
+      <div class=row style="margin-top:8px"><button type=button class=g id=scsk>Salta</button><button type=button class="g d" id=scrj>Respingi</button><button type=button id=scld>Carica</button></div></div>`;
     const C = ctl.scr, f = k => C.querySelector(`[name=${k}]`);
     const ordInfo = () => { const o = S.sp.find(x => !x.ok && x.n.toLowerCase() == f('n').value.trim().toLowerCase()); C.querySelector('#sco').innerHTML = o ? `Nell'ordine: <b>${o.q} ${esc(o.u)}</b>` : ''; };
     f('n').oninput = ordInfo; ordInfo();
-    f('f').onchange = () => { const fu = S.fr.find(x => x.id == f('f').value); f('s').innerHTML = shelves(fu).map((l, i) => `<option value=${i + 1}>${l}</option>`).join(''); };
+    const rcHint = () => {
+      const fu = S.fr.find(x => x.id == f('f').value), t = f('tt').value;
+      C.querySelector('#rch').innerHTML = t === '' ? `Limite indicativo: ${fu && fu.k == 'cong' ? 'surgelati non oltre −15 °C' : 'refrigerati non oltre +7 °C'}` : rcOk(+t, fu) ? '<span class=ok>Temperatura nel limite</span>' : `<span class=bad>Temperatura oltre il limite (${rcLim(fu)} °C): valuta se respingere</span>`;
+    };
+    f('tt').oninput = rcHint; rcHint();
+    f('f').onchange = () => { const fu = S.fr.find(x => x.id == f('f').value); f('s').innerHTML = shelves(fu).map((l, i) => `<option value=${i + 1}>${l}</option>`).join(''); rcHint(); };
+    const ordLine = () => S.sp.find(x => !x.ok && x.n.toLowerCase() == f('n').value.trim().toLowerCase());
+    C.querySelector('#scrj').onclick = () => {
+      const n = f('n').value.trim();
+      if (!n) return alert('Scrivi il prodotto da respingere.');
+      const w = C.querySelector('#rjw');
+      if (w.style.display == 'none') {
+        w.style.display = 'block';
+        f('rj').value = f('tt').value !== '' && !rcOk(+f('tt').value, S.fr.find(x => x.id == f('f').value)) ? RJ[0] : !f('int').checked ? RJ[1] : RJ[0];
+        C.querySelector('#scrj').textContent = 'Conferma rifiuto';
+        return;
+      }
+      const o = ordLine(), t = f('tt').value === '' ? null : +f('tt').value;
+      rcAdd({n, q:num(f('q').value), u:f('u').value, t, tok:rcOk(t, S.fr.find(x => x.id == f('f').value)), int:f('int').checked ? 1 : 0, es:'r', mot:f('rj').value, fo:o ? foFor(o.n, o) : foFor(n)});
+      save();
+      loaded.unshift({n, q:num(f('q').value), u:f('u').value, where:'RESPINTO · ' + f('rj').value, l:'', e:''});
+      tst(n + ' respinto: resta nell\'ordine');
+      paintDone(ctl); ctl.resume();
+    };
     if (!cat) offName(key).then(nm => { if (nm && !f('n').value) { f('n').value = nm; ordInfo(); ctl.status('Nome trovato online: controllalo prima di caricare'); } });
     else if (!g || !g.exp) f('e').focus();
     C.querySelector('#scsk').onclick = () => ctl.resume();
     C.querySelector('#scld').onclick = () => {
       const n = f('n').value.trim(), q = num(f('q').value), u = f('u').value, fid = f('f').value, s = +f('s').value || 1, l = f('l').value.trim(), e = f('e').value;
       if (!n || !(q > 0)) return alert('Scrivi il prodotto e la quantità.');
+      const tt = f('tt').value === '' ? null : +f('tt').value, tok = rcOk(tt, S.fr.find(x => x.id == fid)), integ = f('int').checked;
+      if ((!tok || !integ) && !confirm(`${!tok ? 'Temperatura oltre il limite indicativo. ' : ''}${!integ ? 'Imballo non integro. ' : ''}Caricare comunque? Altrimenti tocca "Respingi".`)) return;
+      const o0 = ordLine();
+      rcAdd({n, q, u, t:tt, tok, int:integ ? 1 : 0, es:'a', fo:o0 ? foFor(o0.n, o0) : foFor(n), l, e});
       // catalogo codici
       if (cat) Object.assign(cat, {n, u, f: fid, s, ...(g && g.w != null ? {} : {q})});
       else if (f('rem') && f('rem').checked) S.bc.push({id: key, n, u, q: g && g.w != null ? 1 : q, f: fid, s});

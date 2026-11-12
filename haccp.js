@@ -39,20 +39,39 @@ const nTask = () => ed('Nuovo compito di pulizia', `<input name=n placeholder="C
 const vPr = () => {
   const E = can('edit'), none = !S.prof && !S.u.length && !S.t.length;
   if (!E) return '';
-  if (peProf || none) return `<div class=card><b>Profilo attività</b><div class=m>Scegli il tipo di locale: carica zone di temperatura e pulizie tipiche, poi modificale. Verifica i limiti con il tuo piano HACCP.</div>${Object.keys(PRE).map(k => `<button class=g data-a=pre data-id="${k}" style="margin:8px 6px 0 0">${k}</button>`).join('')}${peProf && !none ? '<div><button class=g data-a=xpp style="margin-top:10px">Annulla</button></div>' : ''}</div>`;
+  if (peProf || none) return `<div class=card><b>Profilo attività</b><div class=m>Scegli il tipo di locale: carica zone di temperatura e pulizie tipiche, poi modificale. Verifica i limiti con il tuo piano HACCP.</div>${Object.keys(PRE).map(k => `<button class=g data-a=pre data-id="${k}" style="margin:8px 6px 0 0">${k}</button>`).join('')}${peProf && !none ? '<div><button class=g data-a=hpx style="margin-top:10px">Annulla</button></div>' : ''}</div>`;
   return `<div class=row style="margin:0 2px 10px"><span class=m>Profilo attività: <b>${esc(S.prof || 'personalizzato')}</b></span><button class="g sm" data-a=xpc>Cambia</button></div>`;
 };
 
+// ---------- Controllo merce all'arrivo ----------
+const RJ = ['Temperatura non conforme', 'Imballo danneggiato', 'Scaduto o troppo vicino alla scadenza', 'Merce non ordinata', 'Qualità non conforme', 'Altro'];
+// limite indicativo: surgelati non oltre -15 °C, refrigerati non oltre +7 °C (segui il tuo piano HACCP)
+const rcLim = fr => fr && fr.k == 'cong' ? -15 : 7;
+const rcOk = (t, fr) => t === null || t === '' || isNaN(t) || +t <= rcLim(fr);
+function rcAdd(o) {
+  S.rc.push({id:uid(), d:today(), h:hm(), by:me(), t:null, int:1, es:'a', mot:'', fo:'', ...o});
+  if (o.es == 'r') act('merce', `RESPINTO ${o.n}${o.fo && foById(o.fo) ? ' (' + foById(o.fo).n + ')' : ''}: ${o.mot}`);
+  else if ((o.t !== null && o.t !== '' && !o.tok) || !o.int) act('merce', `${o.n} accettato con riserva: ${o.t !== null && o.t !== '' ? o.t + '°' : ''}${o.int ? '' : ' imballo non integro'}`);
+}
+
+// ---------- Pagina HACCP ----------
+let hS = 'oggi', hReg = 'temp';
+const monthName = m => new Date(m + '-15').toLocaleDateString('it', {month:'long', year:'numeric'});
+
 function vH() {
+  const segs = [['oggi','Oggi'],['reg','Registri'],['man','Manutenzioni']];
+  const bar = `<div class="sg np">${segs.map(([k, l]) => `<button data-a=hsg data-id=${k} class="${k == hS ? 'on' : ''}">${l}${k == 'man' && mtAlert() ? ' •' : ''}</button>`).join('')}</div>`;
+  return bar + (hS == 'reg' ? vReg() : hS == 'man' ? vMt() : vOggi());
+}
+
+function vOggi() {
   const D = today(), E = can('edit'), L = [...S.log].sort((a, b) => (b.d + b.h).localeCompare(a.d + a.h));
-  const mos = [...new Set([D.slice(0, 7), ...S.log.map(x => x.d.slice(0, 7))])].sort().reverse();
-  if (!hMo || !mos.includes(hMo)) hMo = mos[0];
-  const LM = L.filter(x => x.d.slice(0, 7) == hMo);
   const lots = [...S.lots, ...S.pr.filter(x => x.e).map(x => ({...x, mag:1}))].sort((a, b) => a.e.localeCompare(b.e));
   return `${vPr()}<div class="card np"><b>Temperature</b>${S.u.map(u => {
       const l = L.find(x => x.u == u.id), td = l && l.d == D;
       return `<div class=row style="margin-top:8px"><div>${esc(u.n)}<div class=m>${u.a}° / ${u.b}°${l ? ` · ultima <span class="${l.ok ? '' : 'bad'}">${l.t}°</span> ${td ? 'oggi' : dm(l.d)} ${l.h}${l.by ? ' · ' + esc(l.by) : ''}` : ''}</div></div><div class=row><button data-a=temp data-id=${u.id} class="${td ? 'g' : ''}">Registra</button>${E ? `<button class="g d" data-a=du data-id=${u.id}>✕</button>` : ''}</div></div>`;
     }).join('') || `<div class=m>Nessuna zona${E ? ': aggiungila o scegli un profilo attività.' : '.'}</div>`}${E ? '<button class=g data-a=nu style="margin-top:10px">+ Zona</button>' : ''}</div>
+  ${abCard()}
   <div class="card np"><b>Lotti e scadenze</b>${lots.map(x => {
       const k = days(x.e);
       return `<div class=row style="margin-top:8px"><div>${esc(x.n)}<div class=m>${x.mag ? (x.pp ? 'preparazione' + (x.d ? ' del ' + dm(x.d) : '') : 'magazzino') : esc(x.l)}${x.l && x.mag ? ' · lotto ' + esc(x.l) : ''} · scade ${dm(x.e)}</div></div><div class=row><span class="${k < 0 ? 'bad' : k <= 2 ? 'warn' : ''}">${k < 0 ? 'scaduto' : k == 0 ? 'oggi' : k + ' g'}</span>${x.mag ? '' : `<button class="g d" data-a=dl data-id=${x.id}>✕</button>`}</div></div>`;
@@ -61,15 +80,30 @@ function vH() {
       const dn = S.done[D + t.id];
       return `<div class=row><label class=chk><input type=checkbox data-a=done data-id=${t.id} ${dn ? 'checked' : ''}>${esc(t.n)}</label><span class=m style="font-size:12px">${dn && dn.h ? dn.h + (dn.by ? ' · ' + esc(dn.by) : '') : ''}</span>${E ? `<button class="g d sm" data-a=dt data-id=${t.id}>✕</button>` : ''}</div>`;
     }).join('') || '<div class=m>Nessun compito.</div>'}${E ? '<button class=g data-a=nt style="margin-top:10px">+ Compito</button>' : ''}</div>
-  <div class=card><div class=row><b>Registro temperature</b><button class="g np sm" data-a=print>Stampa</button></div>
-  <select id=hmo class=np style="margin:8px 0 0">${mos.map(m => `<option value=${m} ${m == hMo ? 'selected' : ''}>${new Date(m + '-15').toLocaleDateString('it', {month:'long', year:'numeric'})}</option>`).join('')}</select>
-  <div class=m style="margin-top:4px">${S.loc ? esc(S.loc) + ' · ' : ''}${new Date(hMo + '-15').toLocaleDateString('it', {month:'long', year:'numeric'})}</div>
-  <table style="margin-top:6px"><tr><th>Data</th><th>Zona</th><th>°C</th><th>Chi</th><th>Azione</th></tr>${LM.map(x => `<tr><td>${dm(x.d)} ${x.h}</td><td>${esc(x.n)}</td><td class="${x.ok ? '' : 'bad'}">${x.t}°</td><td class=m>${esc(x.by || '')}</td><td class=m>${esc(x.note)}</td></tr>`).join('') || '<tr><td colspan=5 class=m>Nessuna lettura in questo mese.</td></tr>'}</table></div>`;
+  <div class="m np" style="margin:0 2px 12px">I registri da stampare per i controlli sono nella scheda <b>Registri</b>.</div>`;
+}
+
+// Registri stampabili: temperature, merce in arrivo, abbattimento
+function vReg() {
+  const R = {temp:['Temperature', S.log], rc:['Merce in arrivo', S.rc], ab:['Cottura e abbattimento', S.ab]};
+  const src = R[hReg][1], D = today();
+  const mos = [...new Set([D.slice(0, 7), ...src.map(x => (x.d || '').slice(0, 7)).filter(Boolean)])].sort().reverse();
+  if (!hMo || !mos.includes(hMo)) hMo = mos[0];
+  const LM = src.filter(x => (x.d || '').slice(0, 7) == hMo).sort((a, b) => ((a.d || '') + (a.h || a.s || '')).localeCompare((b.d || '') + (b.h || b.s || '')));
+  let tbl = '';
+  if (hReg == 'temp') tbl = `<tr><th>Data</th><th>Zona</th><th>°C</th><th>Chi</th><th>Azione</th></tr>` + (LM.map(x => `<tr><td>${dm(x.d)} ${x.h}</td><td>${esc(x.n)}</td><td class="${x.ok ? '' : 'bad'}">${x.t}°</td><td class=m>${esc(x.by || '')}</td><td class=m>${esc(x.note)}</td></tr>`).join('') || '<tr><td colspan=5 class=m>Nessuna lettura in questo mese.</td></tr>');
+  if (hReg == 'rc') tbl = `<tr><th>Data</th><th>Prodotto</th><th>Fornitore</th><th>°C</th><th>Imb.</th><th>Esito</th><th>Chi</th></tr>` + (LM.map(x => `<tr><td>${dm(x.d)} ${x.h}</td><td>${esc(x.n)}${x.q ? ` <span class=m>${x.q} ${esc(x.u || '')}</span>` : ''}</td><td class=m>${esc((foById(x.fo) || {}).n || '')}</td><td class="${x.tok === false ? 'bad' : ''}">${x.t !== null && x.t !== '' && x.t !== undefined ? x.t + '°' : '–'}</td><td class="${x.int ? '' : 'bad'}">${x.int ? 'ok' : 'no'}</td><td class="${x.es == 'r' ? 'bad' : ''}">${x.es == 'r' ? 'Respinto: ' + esc(x.mot) : 'Accettato'}</td><td class=m>${esc(x.by || '')}</td></tr>`).join('') || '<tr><td colspan=7 class=m>Nessun controllo in questo mese. Si registrano da soli quando carichi la merce con lo scanner o con "Ordine arrivato".</td></tr>');
+  if (hReg == 'ab') tbl = abTable(LM);
+  return `<div class=card><div class=row><select id=hreg class=np style="margin:0;flex:1;width:auto">${Object.entries(R).map(([k, [l]]) => `<option value=${k} ${k == hReg ? 'selected' : ''}>${l}</option>`).join('')}</select><button class="g np sm" data-a=print>Stampa</button></div>
+    <select id=hmo class=np style="margin:8px 0 0">${mos.map(m => `<option value=${m} ${m == hMo ? 'selected' : ''}>${monthName(m)}</option>`).join('')}</select>
+    <h3 style="margin:10px 0 0">Registro ${R[hReg][0].toLowerCase()}</h3><div class=m>${S.loc ? esc(S.loc) + ' · ' : ''}${monthName(hMo)}</div>
+    <table style="margin-top:6px">${tbl}</table></div>`;
 }
 
 Object.assign(A, {
+  hsg: id => { hS = id; draw(); },
   temp: id => eTemp(id), nu: () => nUnit(), du: id => del('u', id), nt: () => nTask(), nl: () => nLot(), dl: id => del('lots', id), dt: id => del('t', id),
-  xpc: () => { peProf = true; draw(); }, xpp: () => { peProf = false; draw(); },
+  xpc: () => { peProf = true; draw(); }, hpx: () => { peProf = false; draw(); },
   done: (id, el) => {
     const t = S.t.find(x => x.id == id);
     S.done[today() + id] = el.checked ? {h:hm(), by:me()} : 0;
@@ -83,4 +117,4 @@ Object.assign(A, {
     S.prof = id; peProf = false; save(); tab = 'hac'; draw();
   }
 });
-document.addEventListener('change', e => { if (e.target.id == 'hmo') { hMo = e.target.value; draw(); } });
+document.addEventListener('change', e => { if (e.target.id == 'hmo') { hMo = e.target.value; draw(); } if (e.target.id == 'hreg') { hReg = e.target.value; hMo = ''; draw(); } });

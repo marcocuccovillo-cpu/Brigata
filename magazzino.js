@@ -40,12 +40,14 @@ function mgIt(id, fid, sh) {
      <div class=row><input name=q type=number step=any inputmode=decimal value="${p.q}"><select name=u>${MGU.map(u => `<option ${u == p.u ? 'selected' : ''}>${u}</option>`).join('')}</select></div>
      <input name=uc placeholder="Altra unità (se non in lista)" value="${std ? '' : esc(p.u)}">
      ${f && f.k != 'cong' ? `<select name=s>${shelves(f).map((l, i) => `<option value=${i + 1} ${i + 1 == (+p.s || 1) ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
-     <input name=l placeholder="Lotto (facoltativo)" value="${esc(p.l || '')}"><div class=m>Scadenza (facoltativa)</div><input name=e type=date value="${p.e || ''}">`,
+     <input name=l placeholder="Lotto (facoltativo)" value="${esc(p.l || '')}"><div class=m>Scadenza (facoltativa)</div><input name=e type=date value="${p.e || ''}">
+     ${psFields(p.n, p.u)}`,
     d => {
       if (!v(d, 'n').trim()) return false;
       Object.assign(p, {n:v(d, 'n').trim(), q:num(v(d, 'q')), u:v(d, 'uc').trim() || v(d, 'u'), l:v(d, 'l').trim(), e:v(d, 'e')});
       if (v(d, 's')) p.s = +v(d, 's');
       if (n) S.pr.push(p);
+      psSave(d, p.n, p.u);
     },
     n ? '' : `<button type=button class="g d" id=xpd>Elimina</button><button type=button class=g id=xps>Scarto</button>`);
   if (!n) {
@@ -57,32 +59,6 @@ function mgIt(id, fid, sh) {
       });
     };
   }
-}
-
-function mgSpE() {
-  ed('Aggiungi all\'ordine',
-    `<input name=n list=dl2 placeholder="Prodotto"><datalist id=dl2>${[...new Set([...S.ing.map(i => i.n), ...S.pr.map(p => p.n)])].map(x => `<option value="${esc(x)}">`).join('')}</datalist>
-     <div class=row><input name=q type=number step=any inputmode=decimal value=1><select name=u>${MGU.map(u => `<option>${u}</option>`).join('')}</select></div>
-     <input name=uc placeholder="Altra unità (facoltativa)">`,
-    d => {
-      if (!v(d, 'n').trim()) return false;
-      S.sp.push({id:uid(), n:v(d, 'n').trim(), q:num(v(d, 'q')) || 1, u:v(d, 'uc').trim() || v(d, 'u'), ok:0});
-    });
-}
-
-const mgTxt = () => 'Ordine merci' + (S.loc ? ' — ' + S.loc : '') + '\n' + S.sp.filter(x => !x.ok).map(x => '• ' + x.n + ' — ' + x.q + ' ' + x.u).join('\n');
-
-function mgImg() {
-  const L = S.sp.filter(x => !x.ok), c = document.createElement('canvas'), W = 720, H = 150 + L.length * 56 + 40;
-  c.width = W; c.height = H;
-  const g = c.getContext('2d');
-  g.fillStyle = '#faf6ec'; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#14120e'; g.fillRect(0, 0, W, 90);
-  g.fillStyle = '#c9a24a'; g.font = 'bold 34px Georgia'; g.fillText('Ordine merci', 30, 58);
-  g.font = '28px system-ui';
-  L.forEach((x, i) => { g.strokeStyle = '#14120e'; g.lineWidth = 2; g.strokeRect(30, 128 + i * 56, 26, 26); g.fillStyle = '#14120e'; g.fillText(x.n + '  —  ' + x.q + ' ' + x.u, 74, 152 + i * 56); });
-  g.fillStyle = '#6f6753'; g.font = '20px system-ui'; g.fillText((S.loc || 'Brigata') + ' · ' + new Date().toLocaleDateString('it'), 30, H - 16);
-  shareCanvas(c, 'ordine-merci.png');
 }
 
 function mgUn(f) {
@@ -120,8 +96,11 @@ function mgAr() {
         return `<div class=card style="padding:10px;margin-bottom:8px" data-i=${x.id}><div class=row><b>${esc(x.n)}</b><span class=m>ordinati ${x.q} ${esc(x.u)}</span></div>
           ${part ? `<div class=row style="margin-top:6px;gap:8px"><span class=m style="flex:none">Arrivati</span><input data-k=q type=number step=any min=0 inputmode=decimal value="${x.q}" style="margin:0"><span class=m style="flex:none">${esc(x.u)}</span></div>` : ''}
           <div class=row style="margin-top:6px;gap:6px"><select data-k=f style="margin:0;flex:1;min-width:0;width:auto">${S.fr.map(f => `<option value=${f.id} ${f.id == d0.f ? 'selected' : ''}>${esc(f.n)}</option>`).join('')}</select><select data-k=s style="margin:0;flex:0 0 122px;width:122px">${shelves(fu).map((l, i) => `<option value=${i + 1} ${i + 1 == d0.s ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-          <input data-k=l placeholder="Lotto" style="margin-top:6px"><div class=m style="margin-top:2px">Scadenza</div><input data-k=e type=date></div>`;
+          <input data-k=l placeholder="Lotto" style="margin-top:6px"><div class=m style="margin-top:2px">Scadenza</div><input data-k=e type=date>
+          <div class=row style="margin-top:6px;gap:8px"><input data-k=t type=number step=0.1 inputmode=decimal placeholder="°C all'arrivo" style="margin:0;flex:1;min-width:0"><label class=chk style="flex:none;margin:0"><input type=checkbox data-k=int checked>Integro</label><label class=chk style="flex:none;margin:0"><input type=checkbox data-k=rj>Respinto</label></div>
+          <select data-k=rjm style="display:none;margin-top:6px">${RJ.map(r => `<option>${r}</option>`).join('')}</select></div>`;
       }).join('') + `<div class=row style="margin-top:10px"><button type=button class=g id=db>Indietro</button><button type=button id=ds>Carica in magazzino</button></div>`;
+    D.querySelectorAll('[data-k=rj]').forEach(cb => cb.onchange = () => { const c = cb.closest('[data-i]'), sel = c.querySelector('[data-k=rjm]'); sel.style.display = cb.checked ? 'block' : 'none'; const t = c.querySelector('[data-k=t]').value, fu = S.fr.find(x => x.id == c.querySelector('[data-k=f]').value); if (cb.checked) sel.value = t !== '' && !rcOk(+t, fu) ? RJ[0] : !c.querySelector('[data-k=int]').checked ? RJ[1] : RJ[4]; });
     D.querySelectorAll('[data-k=f]').forEach(sel => sel.onchange = () => {
       const f = S.fr.find(y => y.id == sel.value), ss = sel.closest('[data-i]').querySelector('[data-k=s]');
       ss.innerHTML = shelves(f).map((l, i) => `<option value=${i + 1}>${l}</option>`).join('');
@@ -130,9 +109,13 @@ function mgAr() {
     $('#ds').onclick = () => {
       const rows = [...D.querySelectorAll('[data-i]')].map(c => {
         const g = k => c.querySelector(`[data-k=${k}]`), it = L.find(x => x.id == c.dataset.i);
-        return {it, q:part ? Math.max(0, num(g('q').value)) : it.q, f:g('f').value, s:+g('s').value, l:g('l').value.trim(), e:g('e').value};
+        const rj = g('rj').checked, t = g('t').value === '' ? null : +g('t').value, fu = S.fr.find(x => x.id == g('f').value);
+        return {it, q:rj ? 0 : part ? Math.max(0, num(g('q').value)) : it.q, f:g('f').value, s:+g('s').value, l:g('l').value.trim(), e:g('e').value, rj, rjm:g('rjm').value, t, tok:rcOk(t, fu), int:g('int').checked ? 1 : 0};
       });
-      if (!rows.some(r => r.q > 0)) return alert('Inserisci almeno una quantità arrivata.');
+      if (!rows.some(r => r.q > 0 || r.rj)) return alert('Inserisci almeno una quantità arrivata.');
+      const warn = rows.filter(r => !r.rj && r.q > 0 && (!r.tok || !r.int));
+      if (warn.length && !confirm(`${warn.map(r => r.it.n).join(', ')}: temperatura oltre il limite indicativo o imballo non integro. Caricare comunque? Altrimenti segna "Respinto".`)) return;
+      rows.forEach(r => { if (r.rj || r.q > 0) rcAdd({n:r.it.n, q:r.rj ? r.it.q : r.q, u:r.it.u, t:r.t, tok:r.tok, int:r.int, es:r.rj ? 'r' : 'a', mot:r.rj ? r.rjm : '', fo:foFor(r.it.n, r.it), l:r.l, e:r.e}); });
       let nAdd = 0, miss = [];
       rows.forEach(r => {
         if (r.q <= 0) return;
@@ -153,24 +136,19 @@ function mgAr() {
   step1(); D.showModal();
 }
 
-function mgSp() {
-  const L = S.sp;
-  return `<button class=g data-a=xmb style="margin-bottom:10px">‹ Magazzino</button><div class=card><b>Ordine merci</b><div class="row st" style="margin:8px 0"><button data-a=xsa>+ Aggiungi</button><button class=g data-a=xst>Testo</button><button class=g data-a=xsi>Immagine</button></div>`
-    + (L.length ? '<button data-a=xar class=w style="margin-bottom:6px">Aggiungi ordine arrivato</button>' : '')
-    + (L.map(x => `<div class=li><div class=row><label class=chk style="margin:0;min-width:0"><input type=checkbox data-a=xsk data-id=${x.id} ${x.ok ? 'checked' : ''}><span style="${x.ok ? 'text-decoration:line-through;color:var(--m)' : ''}">${esc(x.n)}</span></label><button class="g d sm" data-a=xsd data-id=${x.id}>✕</button></div><div class="row st" style="margin-top:6px;gap:8px"><button class=g data-a=xsq data-id=${x.id} data-d=-1 style="width:44px">−</button><b data-a=xsE data-id=${x.id} style="min-width:72px;text-align:center;font-size:17px;cursor:pointer">${x.q} <span class=m>${esc(x.u)}</span></b><button class=g data-a=xsq data-id=${x.id} data-d=1 style="width:44px">+</button></div></div>`).join('') || '<div class=m>Ordine vuoto: dal magazzino tocca "Ordina" su un prodotto.</div>')
-    + (L.some(x => x.ok) ? '<button class=g data-a=xsc style="margin-top:10px">Rimuovi gli ordinati</button>' : '')
-    + `</div><div class=m>Con − e + cambi la quantità, toccandola la scrivi a mano. Spunta ciò che hai già ordinato al fornitore. Condividi l'ordine su WhatsApp come testo o come immagine.</div>`;
-}
-
 function vMag() {
   if (mgs == 'spesa') return mgSp();
   if (mgs == 'codici') return mgCod();
+  if (mgs == 'fornitori') return vFo();
+  if (mgs == 'inv') return vInv();
   const f = S.fr.find(x => x.id == mgs);
   if (f) return mgUn(f);
   mgs = null;
   const nS = S.sp.filter(x => !x.ok).length;
-  const nP = S.pr.filter(x => x.pp).length;
-  return `<div class=row style="gap:8px;margin-bottom:8px"><button data-a=xscn style="flex:1">Scansiona merce</button><button data-a=xpp style="flex:1">+ Preparazione</button></div>${nP ? `<div class=m style="margin:0 2px 8px">${nP} preparazioni in magazzino${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length ? ` · <span class=warn>${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length} scadono entro domani</span>` : ''}</div>` : ''}<div class="row st" style="margin-bottom:10px">${can('edit') ? '<button class=g data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button><button class=g data-a=xcod>Codici${S.bc.length ? ` (${S.bc.length})` : ''}</button></div>`
+  const nP = S.pr.filter(x => x.pp).length, low = lowStock(), todo = prepTodo();
+  return `<div class=row style="gap:8px;margin-bottom:8px"><button data-a=xscn style="flex:1">Scansiona merce</button><button data-a=xpp style="flex:1">+ Preparazione</button></div>${nP ? `<div class=m style="margin:0 2px 8px">${nP} preparazioni in magazzino${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length ? ` · <span class=warn>${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length} scadono entro domani</span>` : ''}</div>` : ''}<div class="row st" style="margin-bottom:10px">${can('edit') ? '<button class=g data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button><button class=g data-a=fol>Fornitori</button><button class=g data-a=xcod>Codici${S.bc.length ? ` (${S.bc.length})` : ''}</button>${can('edit') ? '<button class=g data-a=xinv>Inventario</button>' : ''}</div>`
+    + (todo.length ? `<div class=card style="border-color:var(--g)"><b>Preparazioni da rifare</b>${todo.map(p => `<div class=row style="margin-top:6px"><span>${esc(p.n)}</span><span class=m>${prepStock(p.n, p.u)} / ${p.mn} ${esc(p.u)}</span></div>`).join('')}</div>` : '')
+    + (low.length ? `<div class=card data-a=xsp style="cursor:pointer"><b>Sotto scorta</b>${low.map(p => `<div class=row style="margin-top:6px"><span>${esc(p.n)}</span><span class=m>${stockOf(p.n, p.u)} / ${p.min} ${esc(p.u)}${S.sp.some(x => !x.ok && pKey(x.n) == p.id) ? ' · in ordine' : ''}</span></div>`).join('')}</div>` : '')
     + (S.fr.length ? `<div class=ug>${S.fr.map(f => {
       const L = S.pr.filter(x => x.f == f.id), al = L.filter(x => x.e && days(x.e) <= 2).length;
       return `<div class="card uc" data-a=xmu data-id=${f.id}><div style="width:${f.k == 'cong' ? '100%' : '58%'};margin:0 auto 6px">${mgDraw(f)}</div><b>${esc(f.n)}</b><div class=m>${MGK[f.k]} · ${L.length} prodotti</div>${al ? `<div class=warn>${al} in scadenza</div>` : ''}</div>`;
@@ -187,18 +165,13 @@ Object.assign(A, {
   xcs: id => {
     const p = S.pr.find(x => x.id == id), e = S.sp.find(x => !x.ok && x.n.toLowerCase() == p.n.toLowerCase());
     if (e) { e.q = +(e.q + 1).toFixed(2); save(); return tst(p.n + ': ora ' + e.q + ' ' + e.u); }
-    S.sp.push({id:uid(), n:p.n, q:1, u:p.u, ok:0}); save(); tst(p.n + ' aggiunto all\'ordine');
+    const ps = psOf(p.n);
+    addOrder(p.n, ps && ps.o > 0 ? ps.o : 1, p.u); save(); tst(p.n + ' aggiunto all\'ordine');
   },
   xtz: id => {
     const f = S.fr.find(x => x.id == id);
     if (S.u.some(z => z.n == f.n)) return tst('Già nel registro temperature');
     S.u.push({id:uid(), n:f.n, a:f.k == 'cong' ? -25 : 0, b:f.k == 'cong' ? -18 : 4}); save(); tst('Aggiunto al registro temperature');
   },
-  xsa: () => mgSpE(), xar: () => mgAr(),
-  xsq: (id, el) => { const x = S.sp.find(y => y.id == id), st = ['g','ml'].includes(x.u) ? 100 : 1; x.q = Math.max(0, +(x.q + st * +el.dataset.d).toFixed(2)); save(); draw(); },
-  xsE: id => { const x = S.sp.find(y => y.id == id), r = prompt('Quantità (' + x.u + ')', x.q); if (r === null) return; const q = num(r); if (q < 0) return; x.q = q; save(); draw(); },
-  xsk: (id, el) => { S.sp.find(x => x.id == id).ok = el.checked ? 1 : 0; save(); draw(); },
-  xsd: id => { S.sp = S.sp.filter(x => x.id != id); save(); draw(); },
-  xsc: () => { S.sp = S.sp.filter(x => !x.ok); save(); draw(); },
-  xst: () => shareText(mgTxt()), xsi: () => mgImg()
+  xar: () => mgAr()
 });

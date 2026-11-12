@@ -8,7 +8,7 @@ const PPU = ['kg','l','pz','porzioni','GN 1/1','GN 1/2','GN 1/3','GN 1/4','GN 1/
 const PPG = [1, 2, 3, 5, 7, 30, 90];
 const ppKey = n => n.trim().toLowerCase();
 
-function ePrep(id, fid, sh) {
+function ePrep(id, fid, sh, preName) {
   if (!S.fr.length) return alert('Per mettere una preparazione in magazzino serve almeno un frigorifero, una cella o un congelatore. Aggiungine uno in Magazzino.');
   const n = !id, p = S.pr.find(x => x.id == id) || {id:uid(), n:'', q:1, u:'kg', f:fid || '', s:sh || 1, l:'', e:'', pp:1, d:today(), h:hm(), by:me(), r:''};
   const names = [...new Set([...S.pp.map(x => x.n), ...S.rec.map(r => r.n)])].sort((a, b) => a.localeCompare(b));
@@ -26,7 +26,8 @@ function ePrep(id, fid, sh) {
      <div class=row style="gap:6px"><select name=f style="flex:1;min-width:0;width:auto">${S.fr.map(f => `<option value=${f.id} ${f.id == fr0.id ? 'selected' : ''}>${esc(f.n)}</option>`).join('')}</select><select name=s style="flex:0 0 122px;width:122px">${shelves(fr0).map((l, i) => `<option value=${i + 1} ${i + 1 == (+p.s || 1) ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
      <div class=row style="margin-top:8px"><div style="flex:1;min-width:0"><div class=m>Prodotta il</div><input name=d type=date value="${p.d || today()}"></div><div style="flex:1;min-width:0"><div class=m>Scade il</div><input name=e type=date value="${p.e || trD(p.d || today(), g0)}"></div></div>
      <div id=ppg>${chips(PPG, g0, 'g', x => x + (x == 1 ? ' giorno' : ' giorni'))}</div>
-     <input name=l placeholder="Note / lotto interno (facoltativo)" value="${esc(p.l || '')}">`,
+     <input name=l placeholder="Note / lotto interno (facoltativo)" value="${esc(p.l || '')}">
+     <input name=mn type=number step=any min=0 inputmode=decimal placeholder="Avvisami quando ne resta meno di… (facoltativo)" value="${(S.pp.find(x => x.id == ppKey(p.n)) || {}).mn || ''}">`,
     d => {
       const nm = v(d, 'n').trim(), q = num(v(d, 'q'));
       const u = v(d, 'u') == '__' ? v(d, 'uc').trim() : v(d, 'u');
@@ -38,7 +39,7 @@ function ePrep(id, fid, sh) {
       if (n) { p.h = hm(); p.by = me(); S.pr.push(p); }
       // memoria della preparazione per la prossima volta
       const g = days(p.e) - days(p.d), k = ppKey(nm), m = S.pp.find(x => x.id == k);
-      const mem = {n:nm, q:p.q, u, g, f:p.f, s:p.s};
+      const mem = {n:nm, q:p.q, u, g, f:p.f, s:p.s, mn:num(v(d, 'mn'))};
       if (m) Object.assign(m, mem); else S.pp.push({id:k, ...mem});
       const fu = S.fr.find(x => x.id == p.f);
       if (n) act('prep', `${nm} ${p.q} ${u} · ${fu ? fu.n : ''} · scade ${dm(p.e)}`);
@@ -60,6 +61,7 @@ function ePrep(id, fid, sh) {
     const m = S.pp.find(x => x.id == ppKey(f('n').value));
     if (!m) return;
     f('q').value = m.q; mark($('#ppq'), 'q', m.q);
+    if (m.mn) f('mn').value = m.mn;
     if (![...f('u').options].some(o => o.value == m.u)) f('u').insertAdjacentHTML('afterbegin', `<option>${esc(m.u)}</option>`);
     f('u').value = m.u;
     if (S.fr.some(x => x.id == m.f)) { f('f').value = m.f; f('f').onchange(); f('s').value = m.s; }
@@ -73,6 +75,7 @@ function ePrep(id, fid, sh) {
   f('e').onchange = syncG;
   f('d').onchange = () => { const b = $('#ppg [data-g]:not(.g)'); if (b) setG(+b.dataset.g); };
   alInfo();
+  if (n && preName) { f('n').value = preName; f('n').oninput(); }
   if (!n) {
     $('#ppx').onclick = () => { if (confirm('Eliminare ' + p.n + '?')) { S.pr = S.pr.filter(x => x.id != p.id); save(); D.close(); } };
     $('#pps').onclick = () => {

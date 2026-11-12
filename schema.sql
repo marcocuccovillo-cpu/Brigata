@@ -82,7 +82,7 @@ $$;
 -- tipi di dato che anche un cuoco può scrivere
 create or replace function public.cook_can_write(c text) returns boolean
 language sql immutable as $$
-  select c in ('log','done','lots','pren','pr','sp','nt','tv','sc','bc','pp')
+  select c in ('log','done','lots','pren','pr','sp','nt','tv','sc','bc','pp','ps','rc','ab','mt')
 $$;
 
 create or replace function public.can_write_item(rid uuid, c text, is_update boolean) returns boolean
@@ -208,10 +208,10 @@ create policy i_sel on public.invites for select to authenticated using (public.
 drop policy if exists i_del on public.invites;
 create policy i_del on public.invites for delete to authenticated using (public.my_role(restaurant_id) in ('owner','manager'));
 
--- i cuochi non vedono prezzi e food cost (coll = 'cost') né gli attestati del personale (coll = 'att')
+-- i cuochi non vedono prezzi e food cost (coll = 'cost') né gli attestati del personale (coll = 'att') né il valore dell'inventario (coll = 'inv')
 drop policy if exists it_sel on public.items;
 create policy it_sel on public.items for select to authenticated
-  using (public.my_role(restaurant_id) in ('owner','manager') or (public.my_role(restaurant_id) = 'cook' and coll not in ('cost','att')));
+  using (public.my_role(restaurant_id) in ('owner','manager') or (public.my_role(restaurant_id) = 'cook' and coll not in ('cost','att','inv')));
 drop policy if exists it_ins on public.items;
 create policy it_ins on public.items for insert to authenticated
   with check (public.can_write_item(restaurant_id, coll, false));

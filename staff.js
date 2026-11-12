@@ -2,9 +2,9 @@
 'use strict';
 
 let auMode = 'in', auErr = '', auBusy = false, actF = 'all', auCode = '', auEm = '', auNm = '', auPw = '';
-const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato', prep:'Preparazione'};
+const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato', prep:'Preparazione', abbattimento:'Abbattimento', manutenzione:'Manutenzione', inventario:'Inventario', ordine:'Ordine'};
 const ACTF = [['all','Tutto'],['haccp','HACCP'],['merce','Merce e scarti'],['altro','Altro']];
-const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto','prep'].includes(a.kind) : f == 'merce' ? ['merce','scarto'].includes(a.kind) : !['temp','pulizia','lotto','prep','merce','scarto'].includes(a.kind));
+const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto','prep','abbattimento','manutenzione'].includes(a.kind) : f == 'merce' ? ['merce','scarto','ordine','inventario'].includes(a.kind) : !['temp','pulizia','lotto','prep','abbattimento','manutenzione','merce','scarto','ordine','inventario'].includes(a.kind));
 
 function syncLine() {
   const C = Cloud, n = C.pending;
@@ -51,13 +51,13 @@ function vStf() {
 }
 
 const rolesCard = () => `<div class="card np"><b>Chi può fare cosa</b><table style="margin-top:6px"><tr><th></th><th>Titolare</th><th>Resp.</th><th>Cuoco</th></tr>
-  ${[['Temperature, pulizie, lotti, scarti, preparazioni','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
+  ${[['Temperature, pulizie, lotti, scarti, preparazioni, abbattimento','✓','✓','✓'],['Controllo merce, guasti e manutenzioni','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Fornitori, inventario','✓','✓','—'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
 
 function authCard() {
   const up = auMode == 'up', last = localStorage.getItem('br_last');
   return (last && !up ? `<div class="card memo"><b>Sei uscito dall'account</b><div class=m style="margin-top:4px">Accedi per ritrovare i dati di ${esc(last)}.</div></div>` : '') + `<div class=card><div class=sg>${[['in','Accedi'],['up','Crea account']].map(([k, l]) => `<button data-a=sau data-id=${k} class="${k == auMode ? 'on' : ''}">${l}</button>`).join('')}</div>
     <form id=auf onsubmit="return false">${up ? `<input name=nm autocomplete=name placeholder="Il tuo nome (es. Marco)" value="${esc(auNm)}">` : ''}<input name=em type=email autocomplete=email autocapitalize=none spellcheck=false placeholder="Email" value="${esc(auEm)}">
-    <div class=row style="gap:6px"><input name=pw type=password autocomplete="${up ? 'new-password' : 'current-password'}" autocapitalize=none spellcheck=false placeholder="Password${up ? ' (almeno 6 caratteri)' : ''}" value="${esc(auPw)}"><button type=button class="g sm" data-a=spw style="flex:none">Mostra</button></div>
+    <div class=row style="gap:6px"><input name=pw type=password autocomplete="${up ? 'new-password' : 'current-password'}" autocapitalize=none spellcheck=false placeholder="Password${up ? ' (almeno 6 caratteri)' : ''}" value="${esc(auPw)}"><button type=button class="g sm" data-a=spv style="flex:none">Mostra</button></div>
     ${auErr ? `<div class=err>${esc(auErr)}${auCode == 'email_not_confirmed' ? '<div style="margin-top:6px"><button type=button class="g sm" data-a=srs>Rimanda email di conferma</button></div>' : ''}</div>` : ''}<button data-a=sgo2 class=w style="margin-top:8px" ${auBusy ? 'disabled' : ''}>${auBusy ? 'Attendi…' : up ? 'Crea account' : 'Accedi'}</button></form>
     ${up ? '' : '<button type=button class=g data-a=sfp style="margin-top:8px;border:0;padding:6px 0;text-decoration:underline;color:var(--a)">Password dimenticata?</button>'}
     <div class=m style="margin-top:10px">${up ? 'Il titolare crea l\'account e poi il ristorante; i cuochi creano l\'account e inseriscono il codice ricevuto.' : 'Senza account Brigata funziona solo su questo telefono.'}</div></div>` + rolesCard();
@@ -102,7 +102,7 @@ function showCode(code, r) {
 
 Object.assign(A, {
   sau: id => { auMode = id; auErr = ''; auCode = ''; draw(); },
-  spw: (id, el) => { const p = $('#auf [name=pw]'); p.type = p.type == 'password' ? 'text' : 'password'; el.textContent = p.type == 'password' ? 'Mostra' : 'Nascondi'; },
+  spv: (id, el) => { const p = $('#auf [name=pw]'); p.type = p.type == 'password' ? 'text' : 'password'; el.textContent = p.type == 'password' ? 'Mostra' : 'Nascondi'; },
   sgo2: async (id, el) => {
     const f = $('#auf'), em = f.em.value.trim().toLowerCase(), pw = f.pw.value, nm = f.nm ? f.nm.value.trim() : '';
     auEm = em; auNm = nm; auPw = pw;
