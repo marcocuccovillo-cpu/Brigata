@@ -57,7 +57,7 @@ La chiave publishable/anon è fatta per stare nell'app: i dati sono protetti dal
 ## 5. Pubblica su GitHub Pages
 
 Carica tutti i file nella repo, tutti nella stessa cartella (niente sottocartelle), e lascia attivo GitHub Pages. Il vecchio `index.html` va sostituito.
-Quando aggiorni i file, cambia il numero di versione in cima a `sw.js` (`br35` → `br36`…) così i telefoni scaricano la versione nuova.
+Quando aggiorni i file, cambia il numero di versione in cima a `sw.js` (`br36` → `br37`…) così i telefoni scaricano la versione nuova.
 
 ## Aggiornamenti
 
@@ -74,7 +74,7 @@ Quando una nuova versione cambia `schema.sql` (per esempio lo scanner dei codici
 
 | | Titolare | Responsabile | Cuoco |
 |---|---|---|---|
-| Temperature, pulizie, lotti, scarti, magazzino, ordini, bacheca, prenotazioni | ✓ | ✓ | ✓ |
+| Temperature, pulizie, lotti, scarti, preparazioni, magazzino, ordini, bacheca, prenotazioni | ✓ | ✓ | ✓ |
 | Vedere ricette e allergeni | ✓ | ✓ | ✓ |
 | Prezzi, food cost, margini | ✓ | ✓ | — |
 | Modificare ricette, ingredienti, zone, unità, turni, dati del locale | ✓ | ✓ | — |
@@ -119,6 +119,7 @@ staff.js        account, brigata, inviti, registro attività
 qr.js           generatore di QR
 scanner.js      scanner dei codici a barre per il carico merce
 attestati.js    attestati e corsi del personale
+preparazioni.js preparazioni messe in magazzino
 app.js          navigazione e avvio
 schema.sql      database (da eseguire in Supabase, non serve all'app)
 icon-192.png, icon-512.png

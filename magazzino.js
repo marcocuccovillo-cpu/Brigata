@@ -89,14 +89,15 @@ function mgUn(f) {
   const E = can('edit'), L = S.pr.filter(x => x.f == f.id), nm = f.k == 'cella' ? 'Scaffale' : f.k == 'cong' ? 'Pozzetto' : 'Ripiano';
   const row = p => {
     const k = p.e ? days(p.e) : 0;
-    return `<div class=li><div class=row><div data-a=xei data-id=${p.id} style="flex:1;cursor:pointer"><b>${esc(p.n)}</b><div class=m><span class="${p.q <= 0 ? 'bad' : ''}">${p.q} ${esc(p.u)}</span>${p.l ? ` · lotto ${esc(p.l)}` : ''}${p.e ? ` · <span class="${k < 0 ? 'bad' : k <= 2 ? 'warn' : ''}">scade ${dm(p.e)}</span>` : ''}</div></div><div class=row style="gap:4px"><button class="g sm" data-a=xqm data-id=${p.id}>−</button><button class="g sm" data-a=xqp data-id=${p.id}>+</button><button class="g sm" data-a=xcs data-id=${p.id}>Ordina</button></div></div></div>`;
+    const r = p.pp && p.r && S.rec.find(x => x.id == p.r);
+    return `<div class=li><div class=row><div data-a=${p.pp ? 'xepp' : 'xei'} data-id=${p.id} style="flex:1;cursor:pointer;min-width:0"><b>${esc(p.n)}</b>${p.pp ? ' <span class=pill style="background:var(--s);color:#5c4710">Prep.</span>' : ''}<div class=m><span class="${p.q <= 0 ? 'bad' : ''}">${p.q} ${esc(p.u)}</span>${p.l ? ` · ${p.pp ? '' : 'lotto '}${esc(p.l)}` : ''}${p.e ? ` · <span class="${k < 0 ? 'bad' : k <= 1 ? 'warn' : ''}">scade ${dm(p.e)}</span>` : ''}</div>${p.pp ? `<div class=m style="font-size:12px">prodotta il ${dm(p.d || '')}${p.by ? ' da ' + esc(p.by) : ''}</div>${r && als(r).length ? `<div>${tags(als(r))}</div>` : ''}` : ''}</div><div class=row style="gap:4px"><button class="g sm" data-a=xqm data-id=${p.id}>−</button><button class="g sm" data-a=xqp data-id=${p.id}>+</button>${p.pp ? '' : `<button class="g sm" data-a=xcs data-id=${p.id}>Ordina</button>`}</div></div></div>`;
   };
   return `<button class=g data-a=xmb style="margin-bottom:10px">‹ Magazzino</button><div class=card><div class=row style="justify-content:flex-start;gap:14px;align-items:flex-start"><div style="width:${f.k == 'cong' ? 96 : 56}px;flex:none">${mgDraw(f)}</div><div style="flex:1"><b style="font:700 19px Georgia,serif">${esc(f.n)}</b><div class=m>${MGK[f.k]}${f.k == 'frigo' ? (f.a == 2 ? ' · anta doppia' : ' · anta singola') : ''} · ${L.length} prodotti</div>${E ? `<div class="row st" style="margin-top:8px"><button class="g sm" data-a=xefr data-id=${f.id}>Modifica</button><button class="g sm" data-a=xtz data-id=${f.id}>Registro temp.</button><button class="g d sm" data-a=xdf data-id=${f.id}>✕</button></div>` : ''}</div></div></div>`
     + Array.from({length:f.sh}, (_, i) => {
       const s = i + 1, l = L.filter(x => (+x.s || 1) == s);
-      return `<div class=card><div class=row><b>${f.k == 'cong' ? nm : nm + ' ' + s}</b><button class="g sm" data-a=xit data-s=${s}>+ Prodotto</button></div>${l.map(row).join('') || '<div class=m>Vuoto</div>'}</div>`;
+      return `<div class=card><div class=row><b>${f.k == 'cong' ? nm : nm + ' ' + s}</b><div class=row style="gap:4px"><button class="g sm" data-a=xpps data-s=${s}>+ Prep.</button><button class="g sm" data-a=xit data-s=${s}>+ Prodotto</button></div></div>${l.map(row).join('') || '<div class=m>Vuoto</div>'}</div>`;
     }).join('')
-    + '<div class=hint>Tocca un prodotto per modificarlo, spostarlo di ripiano o registrarlo come scarto.</div>';
+    + '<div class=hint>Tocca un prodotto o una preparazione per modificarla, spostarla di ripiano o registrarla come scarto.</div>';
 }
 
 // Arrivo merce: carica l'ordine nel magazzino, anche parziale
@@ -168,7 +169,8 @@ function vMag() {
   if (f) return mgUn(f);
   mgs = null;
   const nS = S.sp.filter(x => !x.ok).length;
-  return `<button data-a=xscn class=w style="margin-bottom:8px">Scansiona merce</button><div class="row st" style="margin-bottom:10px">${can('edit') ? '<button class=g data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button><button class=g data-a=xcod>Codici${S.bc.length ? ` (${S.bc.length})` : ''}</button></div>`
+  const nP = S.pr.filter(x => x.pp).length;
+  return `<div class=row style="gap:8px;margin-bottom:8px"><button data-a=xscn style="flex:1">Scansiona merce</button><button data-a=xpp style="flex:1">+ Preparazione</button></div>${nP ? `<div class=m style="margin:0 2px 8px">${nP} preparazioni in magazzino${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length ? ` · <span class=warn>${S.pr.filter(x => x.pp && x.e && days(x.e) <= 1).length} scadono entro domani</span>` : ''}</div>` : ''}<div class="row st" style="margin-bottom:10px">${can('edit') ? '<button class=g data-a=xfr>+ Unità</button>' : ''}<button class=g data-a=xsp>Ordine merci${nS ? ` (${nS})` : ''}</button><button class=g data-a=xcod>Codici${S.bc.length ? ` (${S.bc.length})` : ''}</button></div>`
     + (S.fr.length ? `<div class=ug>${S.fr.map(f => {
       const L = S.pr.filter(x => x.f == f.id), al = L.filter(x => x.e && days(x.e) <= 2).length;
       return `<div class="card uc" data-a=xmu data-id=${f.id}><div style="width:${f.k == 'cong' ? '100%' : '58%'};margin:0 auto 6px">${mgDraw(f)}</div><b>${esc(f.n)}</b><div class=m>${MGK[f.k]} · ${L.length} prodotti</div>${al ? `<div class=warn>${al} in scadenza</div>` : ''}</div>`;

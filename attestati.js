@@ -29,7 +29,7 @@ function eAtt(id, person) {
      <select name=t>${ATT.map(([t]) => `<option ${t == (known ? a.t : 'Altro') ? 'selected' : ''}>${t}</option>`).join('')}</select>
      <input name=tc placeholder="Nome del corso" value="${known ? '' : esc(a.t)}" style="display:${known ? 'none' : 'block'}">
      <div class=hint id=ath></div>
-     <div class=row><div style="flex:1"><div class=m>Data del corso</div><input name=d type=date value="${a.d}"></div><div style="flex:1"><div class=m>Scadenza</div><input name=e type=date value="${a.e}"></div></div>
+     <div class=row><div style="flex:1;min-width:0"><div class=m>Data del corso</div><input name=d type=date value="${a.d}"></div><div style="flex:1;min-width:0"><div class=m>Scadenza</div><input name=e type=date value="${a.e}"></div></div>
      <input name=o placeholder="Ente / organizzazione (facoltativo)" value="${esc(a.o)}">
      <input name=x placeholder="Note (n. attestato, ore…)" value="${esc(a.x)}">`,
     d => {

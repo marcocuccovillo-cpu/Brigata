@@ -55,7 +55,7 @@ function vH() {
     }).join('') || `<div class=m>Nessuna zona${E ? ': aggiungila o scegli un profilo attività.' : '.'}</div>`}${E ? '<button class=g data-a=nu style="margin-top:10px">+ Zona</button>' : ''}</div>
   <div class="card np"><b>Lotti e scadenze</b>${lots.map(x => {
       const k = days(x.e);
-      return `<div class=row style="margin-top:8px"><div>${esc(x.n)}<div class=m>${x.mag ? 'magazzino' : esc(x.l)}${x.l && x.mag ? ' · lotto ' + esc(x.l) : ''} · scade ${dm(x.e)}</div></div><div class=row><span class="${k < 0 ? 'bad' : k <= 2 ? 'warn' : ''}">${k < 0 ? 'scaduto' : k == 0 ? 'oggi' : k + ' g'}</span>${x.mag ? '' : `<button class="g d" data-a=dl data-id=${x.id}>✕</button>`}</div></div>`;
+      return `<div class=row style="margin-top:8px"><div>${esc(x.n)}<div class=m>${x.mag ? (x.pp ? 'preparazione' + (x.d ? ' del ' + dm(x.d) : '') : 'magazzino') : esc(x.l)}${x.l && x.mag ? ' · lotto ' + esc(x.l) : ''} · scade ${dm(x.e)}</div></div><div class=row><span class="${k < 0 ? 'bad' : k <= 2 ? 'warn' : ''}">${k < 0 ? 'scaduto' : k == 0 ? 'oggi' : k + ' g'}</span>${x.mag ? '' : `<button class="g d" data-a=dl data-id=${x.id}>✕</button>`}</div></div>`;
     }).join('') || '<div class=m style="margin-top:6px">Nessun lotto. Anche i prodotti del Magazzino con scadenza compaiono qui.</div>'}<button class=g data-a=nl style="margin-top:10px">+ Lotto</button></div>
   <div class="card np"><b>Pulizie di oggi</b>${S.t.map(t => {
       const dn = S.done[D + t.id];

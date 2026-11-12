@@ -82,7 +82,7 @@ $$;
 -- tipi di dato che anche un cuoco può scrivere
 create or replace function public.cook_can_write(c text) returns boolean
 language sql immutable as $$
-  select c in ('log','done','lots','pren','pr','sp','nt','tv','sc','bc')
+  select c in ('log','done','lots','pren','pr','sp','nt','tv','sc','bc','pp')
 $$;
 
 create or replace function public.can_write_item(rid uuid, c text, is_update boolean) returns boolean

@@ -2,9 +2,9 @@
 'use strict';
 
 let auMode = 'in', auErr = '', auBusy = false, actF = 'all', auCode = '', auEm = '', auNm = '', auPw = '';
-const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato'};
+const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato', prep:'Preparazione'};
 const ACTF = [['all','Tutto'],['haccp','HACCP'],['merce','Merce e scarti'],['altro','Altro']];
-const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto'].includes(a.kind) : f == 'merce' ? ['merce','scarto'].includes(a.kind) : !['temp','pulizia','lotto','merce','scarto'].includes(a.kind));
+const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto','prep'].includes(a.kind) : f == 'merce' ? ['merce','scarto'].includes(a.kind) : !['temp','pulizia','lotto','prep','merce','scarto'].includes(a.kind));
 
 function syncLine() {
   const C = Cloud, n = C.pending;
@@ -51,7 +51,7 @@ function vStf() {
 }
 
 const rolesCard = () => `<div class="card np"><b>Chi può fare cosa</b><table style="margin-top:6px"><tr><th></th><th>Titolare</th><th>Resp.</th><th>Cuoco</th></tr>
-  ${[['Temperature, pulizie, lotti, scarti','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
+  ${[['Temperature, pulizie, lotti, scarti, preparazioni','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
 
 function authCard() {
   const up = auMode == 'up', last = localStorage.getItem('br_last');
