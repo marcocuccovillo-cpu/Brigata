@@ -311,7 +311,7 @@ const Cloud = {
       if (this.force.size) changed = await this.repair() || changed;
       await this.pushAct();
       await this.publish();
-      if (tab == 'stf') changed = await this.loadActs() || changed;
+      if (tab == 'stf') changed = await this.loadActsDay(actD, true) || changed;
       this.state = 'ok'; this.err = ''; this.last = new Date().toISOString();
     } catch (e) {
       this.state = e.offline ? 'offline' : 'err';
@@ -442,6 +442,26 @@ const Cloud = {
     const ids = new Set(r.map(a => a.id));
     this.m.acts = [...this.m.act.filter(a => !ids.has(a.id)).map(a => ({...a, local: 1})), ...r].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 300);
     return true;
+  },
+
+  // un giorno intero del registro (ora locale), per sfogliare tutto lo storico
+  ad: null,
+  async loadActsDay(d, force) {
+    if (!force && this.ad && this.ad.d == d && Date.now() - this.ad.t < 30000) return false;
+    const a = new Date(d + 'T00:00:00').toISOString(), b = new Date(trD(d, 1) + 'T00:00:00').toISOString();
+    const r = await this.api(`/rest/v1/activity?select=id,user_name,kind,text,at&restaurant_id=eq.${this.rid}&at=gte.${encodeURIComponent(a)}&at=lt.${encodeURIComponent(b)}&order=at.desc&limit=2000`) || [];
+    const ids = new Set(r.map(x => x.id));
+    const loc = this.m.act.filter(x => !ids.has(x.id) && new Date(x.at).toLocaleDateString('sv') == d).map(x => ({...x, local: 1}));
+    this.ad = {d, t: Date.now(), L: [...loc, ...r].sort((x, y) => y.at.localeCompare(x.at))};
+    return true;
+  },
+  dayActs(d) {   // attività di un giorno: dal server se caricate, altrimenti dalla copia sul telefono
+    if (this.ad && this.ad.d == d) {
+      const ids = new Set(this.ad.L.map(x => x.id));
+      const extra = this.m.act.filter(x => !ids.has(x.id) && new Date(x.at).toLocaleDateString('sv') == d).map(x => ({...x, local: 1}));
+      return [...extra, ...this.ad.L];
+    }
+    return (this.m.acts || []).filter(x => new Date(x.at).toLocaleDateString('sv') == d);
   },
 
   // ---------- squadra ----------

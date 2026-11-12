@@ -1,6 +1,7 @@
 // Brigata — Staff: account, ristorante, brigata, inviti, sincronizzazione e registro attività
 'use strict';
 
+let actD = today(), actP = '';
 let auMode = 'in', auErr = '', auBusy = false, actF = 'all', auCode = '', auEm = '', auNm = '', auPw = '';
 const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato', prep:'Preparazione', abbattimento:'Abbattimento', manutenzione:'Manutenzione', inventario:'Inventario', ordine:'Ordine'};
 const ACTF = [['all','Tutto'],['haccp','HACCP'],['merce','Merce e scarti'],['altro','Altro']];
@@ -31,12 +32,14 @@ function vStf() {
   if (!C.rid) return noRestCard();
   if (tab == 'stf') {
     C.loadTeam().then(ch => { if (ch) refresh(); }).catch(() => {});
-    C.loadActs().then(ch => { if (ch) refresh(); }).catch(() => {});
+    C.loadActsDay(actD).then(ch => { if (ch) refresh(); }).catch(() => {});
   }
   const own = role() == 'owner', M = C.members, mine = C.user.id;
   const others = C.list.filter(x => x.restaurant_id != C.rid);
-  const acts = (C.m.acts || []).filter(a => actIn(a, actF));
-  let lastD = '';
+  const dayAll = C.dayActs(actD), people = [...new Set(dayAll.map(a => a.user_name).filter(Boolean))].sort();
+  if (actP && !people.includes(actP)) actP = '';
+  const acts = dayAll.filter(a => actIn(a, actF) && (!actP || a.user_name == actP));
+  const loading = !(C.ad && C.ad.d == actD) && navigator.onLine;
   return `<div class=card><div class=row><div><b style="font:700 19px Georgia,serif">${esc(C.rname || S.loc)}</b><div class=m id=syncl>${syncLine()}</div></div><button class="g sm" data-a=ssy>Sincronizza</button></div></div>`
     + `<div class=card><b>Tu</b><div class=row style="margin-top:8px"><div><div>${esc(C.name || '—')} <span class="role ${role()}">${ROLES[role()]}</span></div><div class=m>${esc(C.user.email)}</div></div><button class="g sm" data-a=sme>Nome</button></div>`
     + (others.length ? `<div class=m style="margin-top:10px">Altri ristoranti</div>${others.map(x => `<div class=row style="margin-top:6px"><span>${esc(x.name)} <span class="role ${x.role}">${ROLES[x.role]}</span></span><button class="g sm" data-a=sgo data-id=${x.restaurant_id}>Apri</button></div>`).join('')}` : '')
@@ -44,9 +47,12 @@ function vStf() {
     + `<div class=card><b>La brigata</b>${M ? M.map(x => `<div class=li><div class=row ${own && x.user_id != mine ? `data-a=smem data-id=${x.user_id} style="cursor:pointer"` : ''}><span>${esc(x.name || 'Senza nome')}${x.user_id == mine ? ' <span class=m>(tu)</span>' : ''}</span><span class="role ${x.role}">${ROLES[x.role]}</span></div></div>`).join('') : '<div class=m style="margin-top:6px">Caricamento…</div>'}${own ? '<div class=hint>Tocca una persona per cambiarle il ruolo o toglierla dalla brigata.</div>' : ''}</div>`
     + (can('invite') ? `<div class=card><b>Invita nella brigata</b><div class=m style="margin:4px 0 8px">Genera un codice e mandalo su WhatsApp: chi lo riceve crea il suo account e lo inserisce. Vale 7 giorni.</div><div class="row st"><button data-a=sinv data-id=cook>Codice per un cuoco</button>${own ? '<button class=g data-a=sinv data-id=manager>Per un responsabile</button>' : ''}</div>
        ${C.invites && C.invites.length ? `<div class=m style="margin-top:12px">Codici attivi</div>${C.invites.filter(i => new Date(i.expires_at) > new Date()).map(i => `<div class=row style="margin-top:6px"><span><b style="font-family:ui-monospace,monospace;letter-spacing:2px">${i.code}</b> <span class=m>${ROLES[i.role].toLowerCase()} · usato ${i.uses} · scade ${new Date(i.expires_at).toLocaleDateString('it')}</span></span><span class=row style="gap:4px"><button class="g sm" data-a=sshr data-id=${i.code} data-r=${i.role}>Invia</button><button class="g d sm" data-a=sdi data-id=${i.code}>✕</button></span></div>`).join('')}` : ''}</div>` : '')
-    + `<div class=card><div class=row><b>Registro attività</b><button class="g sm np" data-a=print>Stampa</button></div><div class=m style="margin-top:2px">Chi ha registrato cosa e quando. Non si può modificare.</div>
-       <div class="sg np" style="margin:10px 0 4px">${ACTF.map(([k, l]) => `<button data-a=saf data-id=${k} class="${k == actF ? 'on' : ''}">${l}</button>`).join('')}</div>
-       ${acts.slice(0, 150).map(a => { const d = a.at.slice(0, 10), loc = new Date(a.at), dd = loc.toLocaleDateString('sv'), h = dd != lastD ? `<div class=m style="margin:12px 0 2px"><b>${fd(dd)}</b></div>` : ''; lastD = dd; return h + `<div class=act><div class=w>${loc.toLocaleTimeString('it', {hour:'2-digit', minute:'2-digit'})}</div><div style="flex:1;min-width:0"><div class=k>${ACTK[a.kind] || esc(a.kind)}${a.local ? ' · da inviare' : ''}</div><div>${esc(a.text)}</div><div class=m style="font-size:12px">${esc(a.user_name)}</div></div></div>`; }).join('') || '<div class=m style="margin-top:8px">Ancora nessuna attività.</div>'}</div>`
+    + `<div class=card><div class=row><b>Registro attività</b><button class="g sm np" data-a=print>Stampa</button></div><div class=m style="margin-top:2px">Chi ha registrato cosa e quando, giorno per giorno. Non si può modificare.</div>
+       <div class="row np" style="margin-top:10px;gap:6px"><button class="g sm" data-a=sadp style="flex:none">‹</button><input type=date id=actd value="${actD}" max="${today()}" style="margin:0;flex:1;min-width:0"><button class="g sm" data-a=sadn style="flex:none" ${actD >= today() ? 'disabled' : ''}>›</button>${actD != today() ? '<button class="g sm" data-a=sadt style="flex:none">Oggi</button>' : ''}</div>
+       <div class="sg np" style="margin:8px 0 4px">${ACTF.map(([k, l]) => `<button data-a=saf data-id=${k} class="${k == actF ? 'on' : ''}">${l}</button>`).join('')}</div>
+       ${people.length > 1 ? `<select id=actp class=np style="margin:4px 0"><option value="">Tutta la brigata</option>${people.map(p => `<option ${p == actP ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>` : ''}
+       <div class=m style="margin:6px 2px"><b>${fd(actD)}</b> · ${acts.length} ${acts.length == 1 ? 'attività' : 'attività'}${acts.length != dayAll.length ? ` su ${dayAll.length}` : ''}${loading ? ' · caricamento…' : ''}</div>
+       <div class=actbox>${acts.map(a => { const loc = new Date(a.at); return `<div class=act><div class=w>${loc.toLocaleTimeString('it', {hour:'2-digit', minute:'2-digit'})}</div><div style="flex:1;min-width:0"><div class=k>${ACTK[a.kind] || esc(a.kind)}${a.local ? ' · da inviare' : ''}</div><div>${esc(a.text)}</div><div class=m style="font-size:12px">${esc(a.user_name)}</div></div></div>`; }).join('') || `<div class=m style="padding:10px 0">${loading ? 'Caricamento…' : 'Nessuna attività in questo giorno.'}</div>`}</div></div>`
     + rolesCard();
 }
 
@@ -144,7 +150,8 @@ Object.assign(A, {
   sinv: (id, el) => busyRun(el, async () => { const c = await Cloud.invite(id); showCode(c, id); }),
   sshr: (id, el) => shareText(inviteMsg(id, el.dataset.r)),
   sdi: (id, el) => { if (confirm('Annullare il codice ' + id + '?')) busyRun(el, () => Cloud.delInvite(id)); },
-  saf: id => { actF = id; draw(); }
+  saf: id => { actF = id; draw(); },
+  sadp: () => { actD = trD(actD, -1); draw(); }, sadn: () => { if (actD < today()) { actD = trD(actD, 1); draw(); } }, sadt: () => { actD = today(); draw(); }
 });
 
 function newPwDialog() {
@@ -173,3 +180,8 @@ function logoutDialog() {
     D.close(); Cloud.signOut(true);
   };
 }
+
+document.addEventListener('change', e => {
+  if (e.target.id == 'actd' && e.target.value) { actD = e.target.value > today() ? today() : e.target.value; draw(); }
+  if (e.target.id == 'actp') { actP = e.target.value; draw(); }
+});

@@ -45,6 +45,7 @@ function go(id) {
   if (id == 'att') { tab = 'tur'; trV = 'att'; }
   if (id == 'man') { tab = 'hac'; hS = 'man'; }
   if (id == 'hac') hS = 'oggi';
+  if (id == 'stf' && Cloud.ad) Cloud.ad.t = 0;   // aprendo Staff il registro si ricarica
   draw(); scrollTo(0, 0);
 }
 
