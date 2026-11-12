@@ -58,7 +58,10 @@ const Cloud = {
     try { j = t ? JSON.parse(t) : null; } catch (e) {}
     if (!r.ok) {
       const m = j && (j.msg || j.message || j.error_description || j.error) || ('Errore ' + r.status);
-      throw new ApiError(r.status, this.tr(m));
+      const err = new ApiError(r.status, this.tr(m));
+      err.code = j && (j.error_code || j.code) || '';
+      if (/email not confirmed/i.test(m)) err.code = 'email_not_confirmed';
+      throw err;
     }
     return j;
   },
@@ -111,8 +114,11 @@ const Cloud = {
     localStorage.removeItem('br_auth');
     this.state = 'err'; this.err = 'Accedi di nuovo per sincronizzare';
   },
+  appUrl: () => new URL('./', location.href).href,
   async signUp(email, pw, name) {
-    const r = await this.api('/auth/v1/signup', {method: 'POST', body: {email, password: pw, data: {name}}, anon: true});
+    const r = await this.api('/auth/v1/signup?redirect_to=' + encodeURIComponent(this.appUrl()), {method: 'POST', body: {email, password: pw, data: {name}}, anon: true});
+    // con la conferma email attiva Supabase non dà errore se l'email esiste già: restituisce un utente senza identità
+    if (!r.access_token && r.identities && !r.identities.length) throw new ApiError(422, 'Esiste già un account con questa email: accedi o usa "Password dimenticata?"');
     if (this.setSess(r)) { await this.afterLogin(); return 'ok'; }
     return 'confirm';
   },
@@ -121,20 +127,50 @@ const Cloud = {
     this.setSess(r);
     await this.afterLogin();
   },
+  async resend(email) { await this.api('/auth/v1/resend?redirect_to=' + encodeURIComponent(this.appUrl()), {method: 'POST', body: {type: 'signup', email}, anon: true}); },
+  async recover(email) { await this.api('/auth/v1/recover?redirect_to=' + encodeURIComponent(this.appUrl()), {method: 'POST', body: {email}, anon: true}); },
+  async setPassword(pw) { await this.api('/auth/v1/user', {method: 'PUT', body: {password: pw}}); },
+  // link della mail (conferma account o nuova password): i dati di accesso arrivano dopo il # dell'indirizzo
+  async fromLink() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (!h.get('access_token') && !h.get('error_description')) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    tab = 'stf';
+    if (h.get('error_description')) { alert(/expired|invalid/i.test(h.get('error_description')) ? 'Il link della mail è scaduto o è già stato usato. Accedi oppure chiedi una nuova mail.' : h.get('error_description')); return draw(); }
+    const tk = h.get('access_token');
+    try {
+      const r = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/auth/v1/user', {headers: {apikey: CFG.supabaseKey, Authorization: 'Bearer ' + tk}});
+      if (!r.ok) throw 0;
+      this.setSess({access_token: tk, refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, expires_at: +h.get('expires_at') || 0, user: await r.json()});
+      if (h.get('type') == 'recovery') { draw(); newPwDialog(); return; }
+      tst('Account confermato: sei dentro');
+      await this.afterLogin();
+    } catch (e) { alert('Non riesco a completare l\'accesso dal link: accedi con email e password.'); }
+    draw();
+  },
   async afterLogin() {
     await this.loadList();
     const saved = localStorage.getItem('br_rid');
     const pick = this.list.find(x => x.restaurant_id == saved) || (this.list.length == 1 ? this.list[0] : null);
     if (pick) this.enter(pick.restaurant_id);
   },
-  async signOut() {
-    const n = this.rid ? this.countPending() : 0;
-    if (n && !confirm(`Ci sono ${n} modifiche non ancora inviate: se esci le perdi. Uscire comunque?`)) return;
+  // Uscita: i dati del ristorante restano sul telefono (si ritrovano subito al prossimo accesso)
+  // a meno che si scelga di cancellarli, per esempio su un telefono condiviso.
+  async signOut(wipe) {
+    const rid = this.rid;
+    if (rid && !wipe && this.countPending()) { try { await this.sync(); } catch (e) {} }   // prova a inviare prima di uscire
     try { await this.api('/auth/v1/logout', {method: 'POST'}); } catch (e) {}
-    if (this.rid) { localStorage.removeItem('br:' + this.rid); localStorage.removeItem('brm:' + this.rid); }
-    localStorage.removeItem('br_auth'); localStorage.removeItem('br_rid');
+    if (rid) {
+      this.saveMeta();
+      if (wipe) { localStorage.removeItem('br:' + rid); localStorage.removeItem('brm:' + rid); localStorage.removeItem('br_last'); }
+      else localStorage.setItem('br_last', this.rname || S.loc || 'il ristorante');
+    }
+    this.m = null; this.rid = null;   // prima di leave(): niente salvataggi del riepilogo dopo la pulizia
+    localStorage.removeItem('br_auth');
+    if (wipe) localStorage.removeItem('br_rid');
     this.sess = null; this.user = null; this.list = [];
-    this.leave();
+    this.leave(true);
+    tab = 'stf'; draw();
   },
 
   // ---------- ristoranti ----------
@@ -143,6 +179,7 @@ const Cloud = {
     const rid = await this.rpc('create_restaurant', {p_name: name, p_my_name: myName});
     await this.loadList();
     this.enter(rid, seed);
+    if (!S.loc) { S.loc = name; save(); }
     act('team', 'Ristorante creato');
   },
   async join(code, myName) {
@@ -155,10 +192,9 @@ const Cloud = {
     if (this.rid) this.saveMeta();
     this.rid = rid;
     localStorage.setItem('br_rid', rid);
+    this.m = this.readMeta(rid);
     load('br:' + rid);
-    let m = null;
-    try { m = JSON.parse(localStorage.getItem('brm:' + rid)); } catch (e) {}
-    this.m = m || {synced: {}, ver: {}, cursor: null, cost: {}, act: [], acts: [], pubH: ''};
+    localStorage.removeItem('br_last');
     const me = this.list.find(x => x.restaurant_id == rid);
     if (me) { this.m.role = me.role; this.m.name = me.my_name; this.m.rname = me.name; }
     this.role = this.m.role || 'cook'; this.name = this.m.name || ''; this.rname = this.m.rname || '';
@@ -173,13 +209,20 @@ const Cloud = {
     draw();
     this.sync();
   },
-  leave() {   // torna ai dati "solo su questo telefono"
+  leave(keepRid) {   // torna ai dati "solo su questo telefono"
     if (this.rid) this.saveMeta();
     this.rid = null; this.m = null; this.role = null; this.name = this.rname = '';
-    localStorage.removeItem('br_rid');
+    if (!keepRid) localStorage.removeItem('br_rid');
     load('cp');
     this.state = 'idle';
     draw();
+  },
+  // riepilogo della sincronizzazione: vale solo se ci sono anche i dati, altrimenti si riscarica tutto da capo
+  readMeta(rid) {
+    let m = null;
+    try { if (localStorage.getItem('br:' + rid) != null) m = JSON.parse(localStorage.getItem('brm:' + rid)); } catch (e) {}
+    if (!m || typeof m != 'object' || !m.synced) m = {synced: {}, ver: {}, cursor: null, cost: {}, act: [], acts: [], pubH: ''};
+    return m;
   },
   saveMeta() { if (this.rid && this.m) try { localStorage.setItem('brm:' + this.rid, JSON.stringify(this.m)); } catch (e) {} },
 
@@ -257,8 +300,9 @@ const Cloud = {
       if (!this.m.cursor) {   // primo scarico su questo telefono: prima i dati del ristorante, poi le aggiunte locali
         changed = await this.pull(true) || changed;
         await this.push();
+      } else if (await this.push() == 'reset') {
+        changed = await this.pull(true) || changed;
       } else {
-        await this.push();
         changed = await this.pull() || changed;
       }
       this.revertLocked();
@@ -282,17 +326,26 @@ const Cloud = {
   async push() {
     const M = this.m, up = this.dirty(this.rows());
     if (!up.length) return;
+    // protezione: un telefono che sta per cancellare online più di metà dei dati ha qualcosa che non va
+    const nDel = up.filter(r => r.deleted).length, nTot = Object.keys(M.synced).length;
+    if (nDel > 20 && nDel > nTot / 2 && !this.allowMass) {
+      console.warn('Brigata: troppe cancellazioni insieme, riscarico i dati invece di cancellarli online');
+      M.cursor = null; M.ver = {}; M.synced = {};
+      return 'reset';
+    }
+    this.allowMass = false;
     const by = {};
-    up.forEach(r => (by[r.coll] = by[r.coll] || []).push(r));
-    for (const coll in by) {
-      const L = by[coll];
+    up.forEach(r => { const g = r.coll + (r.deleted ? '|x' : ''); (by[g] = by[g] || []).push(r); });
+    for (const g in by) {
+      const L = by[g], coll = L[0].coll;
       for (let i = 0; i < L.length; i += 200) {
         const part = L.slice(i, i + 200);
         try {
           await this.api('/rest/v1/items?on_conflict=restaurant_id,coll,id', {
             method: 'POST',
             headers: {Prefer: (coll == 'log' ? 'resolution=ignore-duplicates' : 'resolution=merge-duplicates') + ',return=minimal'},
-            body: part.map(r => ({restaurant_id: this.rid, coll: r.coll, id: r.id, data: r.data, deleted: !!r.deleted}))
+            // le cancellazioni non toccano il contenuto: online resta recuperabile
+            body: part.map(r => r.deleted ? {restaurant_id: this.rid, coll: r.coll, id: r.id, deleted: true} : {restaurant_id: this.rid, coll: r.coll, id: r.id, data: r.data, deleted: false})
           });
           part.forEach(r => { const k = r.coll + '|' + r.id; if (r.deleted) delete M.synced[k]; else M.synced[k] = r.h; });
         } catch (e) {
@@ -429,15 +482,15 @@ const Cloud = {
     if (this.sess && this.sess.user) this.user = this.sess.user; else this.sess = null;
     const rid = localStorage.getItem('br_rid');
     if (this.sess && rid) {
-      let m = null;
-      try { m = JSON.parse(localStorage.getItem('brm:' + rid)); } catch (e) {}
+      this.m = this.readMeta(rid);
       this.rid = rid; load('br:' + rid);
-      this.m = m || {synced: {}, ver: {}, cursor: null, cost: {}, act: [], acts: [], pubH: ''};
       this.role = this.m.role || 'cook'; this.name = this.m.name || ''; this.rname = this.m.rname || '';
     } else load('cp');
     addEventListener('online', () => this.sync());
     document.addEventListener('visibilitychange', () => { if (document.visibilityState == 'visible') this.sync(); });
     setInterval(() => { if (document.visibilityState == 'visible') this.sync(); }, 30000);
+    if (location.hash.includes('access_token') || location.hash.includes('error_description')) setTimeout(() => this.fromLink(), 0);
+    addEventListener('hashchange', () => this.fromLink());
     if (this.rid) setTimeout(() => this.sync(), 300);
     else if (this.sess) this.loadList().then(() => { if (tab == 'stf') draw(); }).catch(() => {});
   }

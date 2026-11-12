@@ -1,7 +1,7 @@
 // Brigata — Staff: account, ristorante, brigata, inviti, sincronizzazione e registro attività
 'use strict';
 
-let auMode = 'in', auErr = '', auBusy = false, actF = 'all';
+let auMode = 'in', auErr = '', auBusy = false, actF = 'all', auCode = '', auEm = '', auNm = '', auPw = '';
 const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup'};
 const ACTF = [['all','Tutto'],['haccp','HACCP'],['merce','Merce e scarti'],['altro','Altro']];
 const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto'].includes(a.kind) : f == 'merce' ? ['merce','scarto'].includes(a.kind) : !['temp','pulizia','lotto','merce','scarto'].includes(a.kind));
@@ -54,10 +54,12 @@ const rolesCard = () => `<div class="card np"><b>Chi può fare cosa</b><table st
   ${[['Temperature, pulizie, lotti, scarti','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
 
 function authCard() {
-  const up = auMode == 'up';
-  return `<div class=card><div class=sg>${[['in','Accedi'],['up','Crea account']].map(([k, l]) => `<button data-a=sau data-id=${k} class="${k == auMode ? 'on' : ''}">${l}</button>`).join('')}</div>
-    <form id=auf onsubmit="return false">${up ? '<input name=nm autocomplete=name placeholder="Il tuo nome (es. Marco)">' : ''}<input name=em type=email autocomplete=email placeholder="Email"><input name=pw type=password autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="Password${up ? ' (almeno 6 caratteri)' : ''}">
-    ${auErr ? `<div class=err>${esc(auErr)}</div>` : ''}<button data-a=sgo2 class=w style="margin-top:8px" ${auBusy ? 'disabled' : ''}>${auBusy ? 'Attendi…' : up ? 'Crea account' : 'Accedi'}</button></form>
+  const up = auMode == 'up', last = localStorage.getItem('br_last');
+  return (last && !up ? `<div class="card memo"><b>Sei uscito dall'account</b><div class=m style="margin-top:4px">Accedi per ritrovare i dati di ${esc(last)}.</div></div>` : '') + `<div class=card><div class=sg>${[['in','Accedi'],['up','Crea account']].map(([k, l]) => `<button data-a=sau data-id=${k} class="${k == auMode ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <form id=auf onsubmit="return false">${up ? `<input name=nm autocomplete=name placeholder="Il tuo nome (es. Marco)" value="${esc(auNm)}">` : ''}<input name=em type=email autocomplete=email autocapitalize=none spellcheck=false placeholder="Email" value="${esc(auEm)}">
+    <div class=row style="gap:6px"><input name=pw type=password autocomplete="${up ? 'new-password' : 'current-password'}" autocapitalize=none spellcheck=false placeholder="Password${up ? ' (almeno 6 caratteri)' : ''}" value="${esc(auPw)}"><button type=button class="g sm" data-a=spw style="flex:none">Mostra</button></div>
+    ${auErr ? `<div class=err>${esc(auErr)}${auCode == 'email_not_confirmed' ? '<div style="margin-top:6px"><button type=button class="g sm" data-a=srs>Rimanda email di conferma</button></div>' : ''}</div>` : ''}<button data-a=sgo2 class=w style="margin-top:8px" ${auBusy ? 'disabled' : ''}>${auBusy ? 'Attendi…' : up ? 'Crea account' : 'Accedi'}</button></form>
+    ${up ? '' : '<button type=button class=g data-a=sfp style="margin-top:8px;border:0;padding:6px 0;text-decoration:underline;color:var(--a)">Password dimenticata?</button>'}
     <div class=m style="margin-top:10px">${up ? 'Il titolare crea l\'account e poi il ristorante; i cuochi creano l\'account e inseriscono il codice ricevuto.' : 'Senza account Brigata funziona solo su questo telefono.'}</div></div>` + rolesCard();
 }
 
@@ -99,19 +101,31 @@ function showCode(code, r) {
 }
 
 Object.assign(A, {
-  sau: id => { auMode = id; auErr = ''; draw(); },
+  sau: id => { auMode = id; auErr = ''; auCode = ''; draw(); },
+  spw: (id, el) => { const p = $('#auf [name=pw]'); p.type = p.type == 'password' ? 'text' : 'password'; el.textContent = p.type == 'password' ? 'Mostra' : 'Nascondi'; },
   sgo2: async (id, el) => {
-    const f = $('#auf'), em = f.em.value.trim(), pw = f.pw.value, nm = f.nm ? f.nm.value.trim() : '';
+    const f = $('#auf'), em = f.em.value.trim().toLowerCase(), pw = f.pw.value, nm = f.nm ? f.nm.value.trim() : '';
+    auEm = em; auNm = nm; auPw = pw;
     if (!em || !pw) { auErr = 'Scrivi email e password'; return draw(); }
     if (auMode == 'up' && !nm) { auErr = 'Scrivi il tuo nome'; return draw(); }
-    auBusy = true; auErr = ''; draw();
+    if (auMode == 'up' && pw.length < 6) { auErr = 'La password deve avere almeno 6 caratteri'; return draw(); }
+    if (pw != pw.trim() && !confirm('La password inizia o finisce con uno spazio (succede con il completamento automatico della tastiera). Continuare così?')) return;
+    auBusy = true; auErr = ''; auCode = ''; draw();
     try {
-      if (auMode == 'up') { const r = await Cloud.signUp(em, pw, nm); if (r == 'confirm') { auMode = 'in'; alert('Ti abbiamo mandato una email: apri il link per confermare l\'account, poi torna qui e accedi.'); } }
+      if (auMode == 'up') { const r = await Cloud.signUp(em, pw, nm); if (r == 'confirm') { auMode = 'in'; alert('Account creato! Ti abbiamo mandato una email: apri il link di conferma da questo telefono ed entri direttamente. Se non arriva, controlla nello spam.'); } }
       else await Cloud.signIn(em, pw);
-    } catch (e) { auErr = errText(e); }
+      auPw = auNm = ''; auMode = 'in';
+    } catch (e) { auErr = errText(e); auCode = e.code || ''; }
     auBusy = false; draw();
   },
-  sout: () => Cloud.signOut(),
+  srs: (id, el) => busyRun(el, async () => { await Cloud.resend(auEm); alert('Email di conferma inviata a ' + auEm + '. Controlla anche lo spam.'); auErr = ''; }),
+  sfp: () => {
+    const em = ($('#auf [name=em]').value || auEm).trim().toLowerCase();
+    if (!em) { auErr = 'Scrivi prima la tua email, poi tocca "Password dimenticata?"'; return draw(); }
+    auEm = em;
+    Cloud.recover(em).then(() => alert('Ti abbiamo mandato una email a ' + em + ': apri il link da questo telefono e scegli una nuova password.')).catch(e => alert(errText(e)));
+  },
+  sout: () => logoutDialog(),
   sgo: id => Cloud.enter(id),
   snew: () => { Cloud.leave(); tab = 'stf'; draw(); },
   sjoin: (id, el) => {
@@ -132,3 +146,30 @@ Object.assign(A, {
   sdi: (id, el) => { if (confirm('Annullare il codice ' + id + '?')) busyRun(el, () => Cloud.delInvite(id)); },
   saf: id => { actF = id; draw(); }
 });
+
+function newPwDialog() {
+  const D = $('#d');
+  D.innerHTML = `<h3 style="margin:0 0 6px">Nuova password</h3><div class=m>Scegli la nuova password del tuo account.</div><input id=np type=password autocomplete=new-password placeholder="Nuova password (almeno 6 caratteri)"><div class=row style="margin-top:12px"><button type=button class=g id=dc>Annulla</button><button type=button id=ds>Salva</button></div>`;
+  D.showModal();
+  $('#dc').onclick = () => D.close();
+  $('#ds').onclick = () => {
+    const p = $('#np').value;
+    if (p.length < 6) return alert('Almeno 6 caratteri.');
+    busyRun($('#ds'), async () => { await Cloud.setPassword(p); await Cloud.afterLogin(); tst('Password cambiata'); D.close(); });
+  };
+}
+
+function logoutDialog() {
+  if (!Cloud.rid) return Cloud.signOut();
+  const D = $('#d'), n = Cloud.countPending();
+  D.innerHTML = `<h3 style="margin:0 0 6px">Uscire dall'account?</h3><div class=m>I dati di ${esc(Cloud.rname || S.loc)} sono salvati online: quando rientri li ritrovi tutti.${n ? ` Ci sono ${n} modifiche non ancora inviate: provo a inviarle ora, altrimenti partono al prossimo accesso.` : ''}</div>
+    <div style="display:grid;gap:8px;margin-top:14px"><button type=button id=lo1>Esci</button><button type=button class="g d" id=lo2>Esci e cancella i dati da questo telefono</button><button type=button class=g id=dc>Annulla</button></div>
+    <div class=hint>Cancella i dati solo se il telefono non è tuo o lo usano altre persone.</div>`;
+  D.showModal();
+  $('#dc').onclick = () => D.close();
+  $('#lo1').onclick = () => { D.close(); Cloud.signOut(false); };
+  $('#lo2').onclick = () => {
+    if (n && !confirm(`${n} modifiche non ancora inviate andranno perse. Continuare?`)) return;
+    D.close(); Cloud.signOut(true);
+  };
+}

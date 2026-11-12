@@ -33,7 +33,8 @@ function vF() {
   return bcTiles()
     + `<div class=card ${E ? 'data-a=xpe style="text-align:center;cursor:pointer"' : 'style="text-align:center"'}>${S.logo ? `<img src="${S.logo}" alt="" style="height:88px;max-width:100%;object-fit:contain">` : ''}<div style="font:700 22px Georgia,serif;margin-top:6px">${esc(S.loc || 'Il tuo locale')}</div><div class=m>${h < 12 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera'}${me() ? ' ' + esc(me().split(' ')[0]) : ''} · ${new Date().toLocaleDateString('it', {weekday:'long', day:'numeric', month:'long'})}</div>${E && !peLoc && S.loc ? '<div class=m style="font-size:12px;margin-top:4px;opacity:.8">Tocca per modificare nome e logo</div>' : ''}</div>`
     + ((peLoc || !S.loc) && E ? `<div class=card><b>Il tuo locale</b><input id=loc placeholder="Nome del locale" value="${esc(S.loc)}"><input id=cap type=number min=0 inputmode=numeric placeholder="Posti a sedere (facoltativo)" value="${S.cap || ''}"><div class="row st" style="margin-top:8px"><button data-a=ul>${S.logo ? 'Cambia logo' : 'Carica logo'}</button>${S.logo ? '<button class="g d" data-a=rl>Rimuovi</button>' : ''}</div><input type=file id=lg accept="image/*" hidden><div class=m style="margin-top:6px">Il logo compare in alto, sulla tabella allergeni e sul menù digitale.</div><button data-a=xpd class=w style="margin-top:12px">Fatto</button></div>` : '')
-    + (Cloud.on && !Cloud.rid && !Cloud.user ? `<div class=card style="border-color:var(--g)"><b>Lavora in squadra</b><div class=m style="margin:4px 0 8px">Crea l'account del ristorante: tutta la brigata vede gli stessi dati dal proprio telefono, anche offline.</div><button data-a=tab data-id=stf>Vai a Staff</button></div>` : '')
+    + (Cloud.on && !Cloud.user && localStorage.getItem('br_last') ? `<div class="card memo"><b>Sei uscito dall'account</b><div class=m style="margin:4px 0 8px">Qui vedi solo i dati salvati su questo telefono. Accedi per ritrovare quelli di ${esc(localStorage.getItem('br_last'))}.</div><button data-a=tab data-id=stf>Accedi</button></div>` : '')
+    + (Cloud.on && !Cloud.rid && !Cloud.user && !localStorage.getItem('br_last') ? `<div class=card style="border-color:var(--g)"><b>Lavora in squadra</b><div class=m style="margin:4px 0 8px">Crea l'account del ristorante: tutta la brigata vede gli stessi dati dal proprio telefono, anche offline.</div><button data-a=tab data-id=stf>Vai a Staff</button></div>` : '')
     + instCard()
     + `<div class=card><b>Situazione di oggi</b><div class=m style="margin-bottom:6px">Tocca una riga per aprire la sezione.</div>`
     + row('Prenotazioni', `Pranzo ${tn('Pranzo')} · Cena ${tn('Cena')}${g ? ` · Giorn. ${g}` : ''}${S.cap ? ` · posti ${S.cap}` : ''}`, 'pre', S.cap && mx > S.cap ? 'bad' : '')
@@ -58,6 +59,7 @@ function importBackup(file) {
       if (!x || typeof x != 'object' || !Array.isArray(x.ing) || !Array.isArray(x.rec)) throw 0;
       const msg = Cloud.rid ? 'Sostituire TUTTI i dati del ristorante con il backup? La modifica arriva anche ai telefoni della brigata.' : 'Sostituire i dati attuali con il backup?';
       if (!confirm(msg)) return;
+      if (Cloud.rid) Cloud.allowMass = true;   // sostituzione voluta: le cancellazioni vanno inviate
       S = norm(x); save(); act('backup', 'Dati sostituiti da un backup'); draw(); tst('Backup importato');
     } catch (_) { alert('File non valido.'); }
   };
