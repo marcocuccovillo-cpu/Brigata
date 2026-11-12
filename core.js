@@ -138,6 +138,7 @@ const IC = {
   bac: sv('<path d="M5 4h14v12l-4 4H5z"/><path d="M15 20v-4h4M8 9h8M8 13h5"/>'),
   tur: sv('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),
   hac: sv('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 5-5"/>'),
+  rep: sv('<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>'),
   stf: sv('<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.3"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>')
 };
 const LOGO = `<svg viewBox="0 0 32 32" width=36 height=36><path d="M11 4 6 7l-4 7 5 3 2-3v14h14V14l2 3 5-3-4-7-5-3-5 7z" fill="#14120e"/><path d="M11 4l5 7 5-7M16 11v17" fill=none stroke="#c9a24a" stroke-width=1.2 stroke-linejoin=round /><g fill="#c9a24a"><circle cx=13.2 cy=17 r=1.1 /><circle cx=13.2 cy=21 r=1.1 /><circle cx=13.2 cy=25 r=1.1 /><circle cx=18.8 cy=17 r=1.1 /><circle cx=18.8 cy=21 r=1.1 /><circle cx=18.8 cy=25 r=1.1 /></g></svg>`;

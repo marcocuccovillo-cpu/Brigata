@@ -51,7 +51,7 @@ function vStf() {
 }
 
 const rolesCard = () => `<div class="card np"><b>Chi può fare cosa</b><table style="margin-top:6px"><tr><th></th><th>Titolare</th><th>Resp.</th><th>Cuoco</th></tr>
-  ${[['Temperature, pulizie, lotti, scarti, preparazioni, abbattimento','✓','✓','✓'],['Controllo merce, guasti e manutenzioni','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Fornitori, inventario','✓','✓','—'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
+  ${[['Temperature, pulizie, lotti, scarti, preparazioni, abbattimento','✓','✓','✓'],['Controllo merce, guasti e manutenzioni','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Fornitori, inventario, report','✓','✓','—'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
 
 function authCard() {
   const up = auMode == 'up', last = localStorage.getItem('br_last');

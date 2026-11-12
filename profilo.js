@@ -49,6 +49,7 @@ function vF() {
     + (can('cost') ? row('Piatti sopra il food cost target', lo, 'rec', lo ? 'bad' : '') : '')
     + row('Clienti serviti, ultimi 30 giorni', `${tot}${m30.length ? ` · ${m30.length} servizi` : ''}`, 'pre')
     + `</div>`
+    + (E ? `<div class=card data-a=tab data-id=rep style="cursor:pointer"><div class=row><div><b>Report del mese</b><div class=m>Clienti, food cost, scarti, magazzino e HACCP di ${new Date().toLocaleDateString('it', {month:'long'})}</div></div><span style="font-size:22px;color:var(--a)">›</span></div></div>` : '')
     + (E ? `<div class=card><b>Messaggio per la brigata</b><textarea id=memo rows=4 placeholder="Da ordinare, da ricordare, note per la brigata…">${esc(S.memo || '')}</textarea><div class=m style="margin-top:6px">Compare in Bacheca come messaggio dello chef per i cuochi.</div></div>` : '')
     + (E ? `<div class=card><b>Backup</b><div class=m>${Cloud.rid ? 'I dati sono salvati online e su questo telefono. Puoi comunque esportare una copia.' : 'I dati restano in questo dispositivo. Esporta un file per sicurezza o per spostarli.'}</div><div class=row style="margin-top:8px"><button data-a=exp>Esporta</button>${!Cloud.rid || role() == 'owner' ? '<button class=g data-a=imp>Importa</button>' : ''}</div></div>` : '')
     + `<div class="card m">Allergeni e temperature sono strumenti di registrazione: non sostituiscono il piano HACCP del locale né la lettura delle etichette.</div>`;

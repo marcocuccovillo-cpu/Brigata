@@ -9,6 +9,7 @@ const T = {
   bac: ['Bacheca', vBac],
   tur: ['Turni', vTur, 'Turni di lavoro'],
   hac: ['HACCP', vH],
+  rep: ['Report', vRep, 'Report del mese'],
   stf: ['Staff', vStf, 'Staff e account']
 };
 let tab = 'pro', pendingDraw = false;
@@ -25,7 +26,8 @@ function draw() {
   $('main').innerHTML = `<h1 class=pt>${T[tab][2] || T[tab][0]}</h1>` + T[tab][1]();
   const hs = $('#hs'); if (hs) hs.scrollLeft = hs.scrollWidth;
   document.querySelectorAll('canvas[data-qr]').forEach(c => drawQR(c, c.dataset.qr));
-  $('nav').innerHTML = Object.entries(T).map(([k, [n]]) => `<button data-a=tab data-id=${k} class="${k == tab ? 'on' : ''}"><span class=ic>${IC[k]}</span><span class=lb>${n}</span></button>`).join('');
+  if (tab == 'rep' && !can('edit')) tab = 'pro';
+  $('nav').innerHTML = Object.entries(T).filter(([k]) => k != 'rep' || can('edit')).map(([k, [n]]) => `<button data-a=tab data-id=${k} class="${k == tab ? 'on' : ''}"><span class=ic>${IC[k]}</span><span class=lb>${n}</span></button>`).join('');
   const o = $('nav .on'); if (o) $('nav').scrollTop = o.offsetTop - ($('nav').clientHeight - o.offsetHeight) / 2;
 }
 
