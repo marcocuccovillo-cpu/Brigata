@@ -1,6 +1,6 @@
 // Brigata — service worker: l'app si apre anche senza rete.
 // Cambia il numero di versione a ogni aggiornamento dei file.
-const C = 'br39';
+const C = 'br40';
 const F = ['./', 'index.html', 'menu.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'app.css',
   'config.js', 'core.js', 'qr.js', 'cloud.js', 'cucina.js', 'haccp.js', 'magazzino.js',
   'bacheca.js', 'turni.js', 'libro.js', 'profilo.js', 'staff.js', 'scanner.js', 'attestati.js', 'preparazioni.js', 'fornitori.js', 'abbattimento.js', 'manutenzioni.js', 'inventario.js', 'report.js', 'app.js'];

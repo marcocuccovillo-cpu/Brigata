@@ -299,6 +299,7 @@ const Cloud = {
         changed = true;
       }
       if (!['owner','manager'].includes(this.role) && S.att.length) S.att = [];   // i cuochi non tengono gli attestati
+      if (['owner','manager'].includes(this.role) && this.m.cursor && Date.now() - this.teamAt > 300000) try { await this.loadTeam(true); } catch (e) {}
       if (!this.m.cursor) {   // primo scarico su questo telefono: prima i dati del ristorante, poi le aggiunte locali
         changed = await this.pull(true) || changed;
         await this.push();
@@ -470,6 +471,7 @@ const Cloud = {
     this.teamAt = Date.now();
     this.members = await this.api(`/rest/v1/members?select=user_id,role,name,joined_at&restaurant_id=eq.${this.rid}&order=joined_at.asc`) || [];
     this.invites = can('invite') ? await this.api(`/rest/v1/invites?select=code,role,expires_at,uses,max_uses&restaurant_id=eq.${this.rid}&order=created_at.desc`) || [] : [];
+    if (stFromTeam()) save();   // persone dei turni = account della brigata
     return true;
   },
   async invite(r) { const c = await this.rpc('create_invite', {p_rid: this.rid, p_role: r}); act('team', `Codice invito creato (${ROLES[r].toLowerCase()})`); await this.loadTeam(true); return c; },
