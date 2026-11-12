@@ -9,6 +9,7 @@
 
 const CFG = window.BRIGATA_CONFIG || {};
 const KV = ['loc','logo','cap','memo','memoD','prof','cw','tpl','pub'];
+const PRIV = ['cost','att'];   // dati che i cuochi non ricevono (uguale alla regola it_sel nel database)
 const COOKW = ['log','done','lots','pren','pr','sp','nt','tv','sc','bc'];   // uguale a cook_can_write() nel database
 
 // JSON con chiavi ordinate: la stessa riga dà sempre la stessa stringa
@@ -232,7 +233,7 @@ const Cloud = {
     const m = new Map(), C = ['owner','manager'].includes(this.role);
     const add = (coll, id, data) => m.set(coll + '|' + id, {coll, id: String(id), data, h: hash(canon(data))});
     for (const coll of ARR) for (const el of S[coll]) {
-      if (!el || el.id == null) continue;
+      if (!el || el.id == null || (PRIV.includes(coll) && !C)) continue;
       const d = {...el}; delete d.id;
       if (coll == 'ing') { if (C) add('cost', 'i:' + el.id, {p: +el.p || 0}); delete d.p; }
       if (coll == 'rec') { if (C) add('cost', 'r:' + el.id, {fc: el.fc, pv: el.pv}); delete d.fc; delete d.pv; }
@@ -247,7 +248,7 @@ const Cloud = {
     for (const [k, r] of cur) if (this.writable(r.coll) && M.synced[k] !== r.h) out.push(r);
     for (const k in M.synced) if (!cur.has(k)) {
       const i = k.indexOf('|'), coll = k.slice(0, i);
-      if (this.writable(coll) && !(coll == 'cost' && !['owner','manager'].includes(this.role))) out.push({coll, id: k.slice(i + 1), data: {}, deleted: true});
+      if (this.writable(coll) && !(PRIV.includes(coll) && !['owner','manager'].includes(this.role))) out.push({coll, id: k.slice(i + 1), data: {}, deleted: true});
     }
     return out;
   },
@@ -292,11 +293,12 @@ const Cloud = {
       if (me.role != this.role || me.my_name != this.name || me.name != this.rname) {
         if (me.role != this.role) {   // nuovo ruolo: riscarica tutto da capo
           this.m.cursor = null; this.m.ver = {};
-          if (me.role == 'cook') { this.m.cost = {}; S.ing.forEach(i => i.p = 0); S.rec.forEach(r => { r.fc = 30; r.pv = 0; }); }
+          if (me.role == 'cook') { this.m.cost = {}; S.ing.forEach(i => i.p = 0); S.rec.forEach(r => { r.fc = 30; r.pv = 0; }); S.att = []; }
         }
         this.role = this.m.role = me.role; this.name = this.m.name = me.my_name; this.rname = this.m.rname = me.name;
         changed = true;
       }
+      if (!['owner','manager'].includes(this.role) && S.att.length) S.att = [];   // i cuochi non tengono gli attestati
       if (!this.m.cursor) {   // primo scarico su questo telefono: prima i dati del ristorante, poi le aggiunte locali
         changed = await this.pull(true) || changed;
         await this.push();
@@ -387,7 +389,7 @@ const Cloud = {
   revertLocked() {   // modifiche locali a dati che il ruolo non può cambiare: si riprendono quelli del ristorante
     const M = this.m, cur = this.rows();
     for (const [k, r] of cur) if (!this.writable(r.coll) && M.synced[k] !== r.h) this.force.add(r.coll);
-    for (const k in M.synced) { const c = k.slice(0, k.indexOf('|')); if (!cur.has(k) && !this.writable(c) && !(c == 'cost' && !['owner','manager'].includes(this.role))) this.force.add(c); }
+    for (const k in M.synced) { const c = k.slice(0, k.indexOf('|')); if (!cur.has(k) && !this.writable(c) && !(PRIV.includes(c) && !['owner','manager'].includes(this.role))) this.force.add(c); }
   },
   async repair() {   // riscarica i tipi di dato che il ruolo non può modificare
     const M = this.m, denied = this.denied;

@@ -40,6 +40,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (pendingDraw) 
 function go(id) {
   if (['rec','ing','men','sca'].includes(id)) { sub = id; tab = 'cuc'; } else tab = id;
   if (id == 'mag') mgs = null;
+  if (id == 'att') { tab = 'tur'; trV = 'att'; }
   draw(); scrollTo(0, 0);
 }
 

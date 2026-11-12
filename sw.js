@@ -1,9 +1,9 @@
 // Brigata — service worker: l'app si apre anche senza rete.
 // Cambia il numero di versione a ogni aggiornamento dei file.
-const C = 'br34';
+const C = 'br35';
 const F = ['./', 'index.html', 'menu.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'app.css',
   'config.js', 'core.js', 'qr.js', 'cloud.js', 'cucina.js', 'haccp.js', 'magazzino.js',
-  'bacheca.js', 'turni.js', 'libro.js', 'profilo.js', 'staff.js', 'scanner.js', 'app.js'];
+  'bacheca.js', 'turni.js', 'libro.js', 'profilo.js', 'staff.js', 'scanner.js', 'attestati.js', 'app.js'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();

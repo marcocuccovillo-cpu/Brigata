@@ -43,6 +43,7 @@ function vF() {
     + row('Scadenze', ex || sc ? `${ex ? ex + ' scaduti' : ''}${ex && sc ? ' · ' : ''}${sc ? sc + ' in scadenza' : ''}` : 'tutto ok', 'hac', ex ? 'bad' : sc ? 'warn' : '')
     + row('Magazzino', S.pr.length ? `${S.pr.length} prodotti${prW ? ` · ${prW} in scadenza` : ''}${S.sp.filter(x => !x.ok).length ? ` · ${S.sp.filter(x => !x.ok).length} da ordinare` : ''}` : '–', 'mag', prW ? 'warn' : '')
     + row('Scarti', `oggi ${scT.length} · mese ${scM.length}`, 'sca')
+    + (E && S.att.length ? (() => { const a = attStat(); return row('Attestati del personale', a.ex || a.soon ? `${a.ex ? a.ex + (a.ex == 1 ? ' scaduto' : ' scaduti') : ''}${a.ex && a.soon ? ' · ' : ''}${a.soon ? a.soon + ' in scadenza' : ''}` : 'tutti validi', 'att', a.ex ? 'bad' : a.soon ? 'warn' : ''); })() : '')
     + (can('cost') ? row('Piatti sopra il food cost target', lo, 'rec', lo ? 'bad' : '') : '')
     + row('Clienti serviti, ultimi 30 giorni', `${tot}${m30.length ? ` · ${m30.length} servizi` : ''}`, 'pre')
     + `</div>`

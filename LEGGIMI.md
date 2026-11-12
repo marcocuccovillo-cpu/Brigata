@@ -18,11 +18,24 @@ Per far lavorare tutta la brigata sugli stessi dati servono 10 minuti di configu
 
 In **Authentication**:
 
+- **URL Configuration**
+  - **Site URL**: l'indirizzo dell'app, per esempio `https://marcocuccovillo-cpu.github.io/brigata/`
+  - **Redirect URLs**: aggiungi lo stesso indirizzo seguito da `**`, per esempio `https://marcocuccovillo-cpu.github.io/brigata/**`
+
+  Così il link nella mail di conferma (e quello di "Password dimenticata?") apre Brigata e fa entrare direttamente.
+  Se il Site URL resta `http://localhost:3000`, il link porta a una pagina che non si apre.
 - **Sign In / Providers → Email**: lascia attivo Email.
-  - **Confirm email** attivo (consigliato): chi crea l'account riceve una mail e deve aprire il link prima di accedere.
-  - Per fare prove veloci puoi disattivarlo e riattivarlo dopo.
-- **URL Configuration → Site URL**: metti l'indirizzo dell'app, per esempio
-  `https://marcocuccovillo-cpu.github.io/brigata/`. Il link della mail di conferma porta lì.
+  - **Confirm email** attivo (consigliato): chi si registra deve aprire il link nella mail prima di poter entrare.
+  - Per le prove puoi disattivarlo: si entra subito dopo la registrazione.
+- Le mail gratuite di Supabase sono poche (qualche mail all'ora). Per un uso vero con molti utenti conviene collegare un servizio di posta in **Authentication → Emails → SMTP Settings**.
+
+### Se "Accedi" risponde "Email o password sbagliate"
+
+Apri **Authentication → Users**:
+
+- **L'utente non c'è**: la registrazione non è andata a buon fine. Registrati di nuovo.
+- **L'utente c'è con "Waiting for verification"**: manca la conferma. Apri il link della mail (controlla lo spam), oppure dai menu ⋯ dell'utente scegli **Confirm user**/**Send magic link**, oppure disattiva per ora "Confirm email".
+- **L'utente c'è ed è confermato**: la password non corrisponde. In Brigata usa **Password dimenticata?** (oppure dai menu ⋯ dell'utente invia il recupero password).
 
 ## 4. Collega l'app
 
@@ -44,7 +57,7 @@ La chiave publishable/anon è fatta per stare nell'app: i dati sono protetti dal
 ## 5. Pubblica su GitHub Pages
 
 Carica tutti i file nella repo, tutti nella stessa cartella (niente sottocartelle), e lascia attivo GitHub Pages. Il vecchio `index.html` va sostituito.
-Quando aggiorni i file, cambia il numero di versione in cima a `sw.js` (`br32` → `br33`…) così i telefoni scaricano la versione nuova.
+Quando aggiorni i file, cambia il numero di versione in cima a `sw.js` (`br35` → `br36`…) così i telefoni scaricano la versione nuova.
 
 ## Aggiornamenti
 
@@ -65,6 +78,7 @@ Quando una nuova versione cambia `schema.sql` (per esempio lo scanner dei codici
 | Vedere ricette e allergeni | ✓ | ✓ | ✓ |
 | Prezzi, food cost, margini | ✓ | ✓ | — |
 | Modificare ricette, ingredienti, zone, unità, turni, dati del locale | ✓ | ✓ | — |
+| Attestati del personale | ✓ | ✓ | — |
 | Invitare cuochi | ✓ | ✓ | — |
 | Invitare responsabili, cambiare ruoli, togliere persone | ✓ | — | — |
 
@@ -104,6 +118,7 @@ profilo.js      pagina iniziale
 staff.js        account, brigata, inviti, registro attività
 qr.js           generatore di QR
 scanner.js      scanner dei codici a barre per il carico merce
+attestati.js    attestati e corsi del personale
 app.js          navigazione e avvio
 schema.sql      database (da eseguire in Supabase, non serve all'app)
 icon-192.png, icon-512.png

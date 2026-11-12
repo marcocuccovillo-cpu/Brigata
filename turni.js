@@ -123,6 +123,10 @@ function grWeek(m) {
 
 function vTur() {
   const D = today(), E = can('edit'), cls = [...S.cl].sort((a, b) => a.a.localeCompare(b.a));
+  const segs = [['gr','Griglia'],['per','Persone'], ...(E ? [['att','Attestati']] : [])];
+  if (!segs.some(s => s[0] == trV)) trV = 'gr';
+  const segBar = `<div class=sg>${segs.map(([k, l]) => `<button data-a=yv data-id=${k} class="${k == trV ? 'on' : ''}">${l}${k == 'att' && (attStat().ex || attStat().soon) ? ' •' : ''}</button>`).join('')}</div>`;
+  if (trV == 'att') return segBar + vAtt();
   const wkP = (p, m) => `<div class=m style="font-size:10px;margin-top:6px">${trR(m).slice(0, 5)} – ${trR(trD(m, 6)).slice(0, 5)}</div><div style="display:flex;gap:3px">${[...Array(7)].map((_, i) => {
     const k = trD(m, i), c = trSh(k)[p.id] || '', sv = trSvc(k), full = sv.p && sv.c;
     return `<div class="tw-wc${k == D ? ' tdy' : ''}${E ? '' : ' ro'}"${full || !E ? '' : ` data-a=ycell data-id=${p.id} data-k=${k}`}><span>${'dlmmgvs'[new Date(k + 'T12:00').getDay()]}</span><b>${k.slice(8)}</b><div class="tw-k ${full ? 'xc' : c ? 's' + c : ''}">${full ? '' : c}</div></div>`;
@@ -130,11 +134,11 @@ function vTur() {
   return `<div class=row style="margin-bottom:10px"><div class=row style="gap:6px"><button class=g data-a=ytn>‹</button><button class=g data-a=ytt>Oggi</button><button class=g data-a=ytp>›</button></div>${E ? '<button data-a=yst>+ Persona</button>' : ''}</div>`
     + (S.st.length && E ? trLockCard() : '')
     + (S.st.length
-      ? `<div class=sg>${[['gr','Griglia'],['per','Persone']].map(([k, l]) => `<button data-a=yv data-id=${k} class="${k == trV ? 'on' : ''}">${l}</button>`).join('')}</div>`
+      ? segBar
         + (trV == 'gr'
           ? (E ? `<div class=m style="margin:0 2px">Tocca un giorno per assegnare i turni di pranzo e cena.</div>` : '') + grWeek(trW) + grWeek(trD(trW, 7)) + `<div class=m style="margin:0 2px 12px">Riga Off: riposo (tratteggiato) e ferie (grigio).</div>`
           : (E ? `<div class=m style="margin:0 2px 8px">Tocca un giorno per cambiare il turno di quella persona.</div>` : '') + S.st.map(p => `<div class=card><div class=row><b ${E ? `data-a=yes data-id=${p.id} style="cursor:pointer"` : ''}>${esc(p.n)}</b><span class=m>${esc(p.r)}</span></div>${wkP(p, trW)}${wkP(p, trD(trW, 7))}</div>`).join('') + `<div class=m style="margin:0 2px 12px">${TRC.map(([c, l]) => `<span class="tc s${c}">${c}</span>${l}`).join('')}</div>`)
-      : `<div class=card><div class=m>${E ? 'Aggiungi le persone della brigata per compilare i turni: due settimane alla volta, con pranzo, cena, doppio, riposo e ferie.' : 'I turni non sono ancora stati compilati.'}</div></div>`)
+      : (E ? segBar : '') + `<div class=card><div class=m>${E ? 'Aggiungi le persone della brigata per compilare i turni: due settimane alla volta, con pranzo, cena, doppio, riposo e ferie.' : 'I turni non sono ancora stati compilati.'}</div></div>`)
     + `<div class=card><b>Chiusure del ristorante</b>`
     + (E ? `<div class=m style="margin:6px 0 4px">Chiusura settimanale: tocca per chiudere il pranzo, la cena o entrambi</div><table class=tw>${[1,2,3,4,5,6,0].map(w => {
         const v = S.cw[w] || '', L = v == 'P' || v == 'T', C = v == 'C' || v == 'T';

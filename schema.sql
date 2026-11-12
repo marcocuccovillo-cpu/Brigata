@@ -208,10 +208,10 @@ create policy i_sel on public.invites for select to authenticated using (public.
 drop policy if exists i_del on public.invites;
 create policy i_del on public.invites for delete to authenticated using (public.my_role(restaurant_id) in ('owner','manager'));
 
--- i cuochi non vedono prezzi e food cost (coll = 'cost')
+-- i cuochi non vedono prezzi e food cost (coll = 'cost') né gli attestati del personale (coll = 'att')
 drop policy if exists it_sel on public.items;
 create policy it_sel on public.items for select to authenticated
-  using (public.my_role(restaurant_id) in ('owner','manager') or (public.my_role(restaurant_id) = 'cook' and coll <> 'cost'));
+  using (public.my_role(restaurant_id) in ('owner','manager') or (public.my_role(restaurant_id) = 'cook' and coll not in ('cost','att')));
 drop policy if exists it_ins on public.items;
 create policy it_ins on public.items for insert to authenticated
   with check (public.can_write_item(restaurant_id, coll, false));

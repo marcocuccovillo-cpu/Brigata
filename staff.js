@@ -2,7 +2,7 @@
 'use strict';
 
 let auMode = 'in', auErr = '', auBusy = false, actF = 'all', auCode = '', auEm = '', auNm = '', auPw = '';
-const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup'};
+const ACTK = {temp:'Temperatura', pulizia:'Pulizia', lotto:'Lotto', merce:'Merce', scarto:'Scarto', pren:'Servizio', tavolata:'Tavolata', nota:'Nota', ricetta:'Ricetta', turni:'Turni', menu:'Menù', team:'Brigata', backup:'Backup', attestato:'Attestato'};
 const ACTF = [['all','Tutto'],['haccp','HACCP'],['merce','Merce e scarti'],['altro','Altro']];
 const actIn = (a, f) => f == 'all' || (f == 'haccp' ? ['temp','pulizia','lotto'].includes(a.kind) : f == 'merce' ? ['merce','scarto'].includes(a.kind) : !['temp','pulizia','lotto','merce','scarto'].includes(a.kind));
 
@@ -51,7 +51,7 @@ function vStf() {
 }
 
 const rolesCard = () => `<div class="card np"><b>Chi può fare cosa</b><table style="margin-top:6px"><tr><th></th><th>Titolare</th><th>Resp.</th><th>Cuoco</th></tr>
-  ${[['Temperature, pulizie, lotti, scarti','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
+  ${[['Temperature, pulizie, lotti, scarti','✓','✓','✓'],['Magazzino, ordini, bacheca, prenotazioni','✓','✓','✓'],['Ricette e allergeni (vedere)','✓','✓','✓'],['Prezzi, food cost, margini','✓','✓','—'],['Ricette, zone, turni (modificare)','✓','✓','—'],['Attestati del personale','✓','✓','—'],['Invitare cuochi','✓','✓','—'],['Ruoli e responsabili','✓','—','—']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>`;
 
 function authCard() {
   const up = auMode == 'up', last = localStorage.getItem('br_last');
@@ -64,7 +64,7 @@ function authCard() {
 }
 
 function noRestCard() {
-  const C = Cloud, hasLocal = !!(S.rec.length || S.ing.length || S.log.length || S.pr.length || S.loc);
+  const C = Cloud, hasLocal = !!(S.loc || ARR.some(k => S[k].length));
   return `<div class=card><b>Ciao ${esc(C.user.name || C.user.email)}</b><div class=m>Crea il tuo ristorante o entra in quello dove lavori.</div></div>`
     + (C.list.length ? `<div class=card><b>I tuoi ristoranti</b>${C.list.map(x => `<div class=row style="margin-top:8px"><span>${esc(x.name)} <span class="role ${x.role}">${ROLES[x.role]}</span></span><button class=sm data-a=sgo data-id=${x.restaurant_id}>Apri</button></div>`).join('')}</div>` : '')
     + `<div class=card><b>Entra con un codice</b><div class=m>Il titolare o il responsabile ti manda un codice di 6 caratteri.</div><input id=jc placeholder="Codice (es. K7M2QX)" autocapitalize=characters maxlength=6 style="text-transform:uppercase;letter-spacing:3px;font-weight:700"><input id=jn placeholder="Il tuo nome nella brigata" value="${esc(C.user.name || '')}"><button data-a=sjoin class=w style="margin-top:6px">Entra nella brigata</button></div>`
